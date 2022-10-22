@@ -50,7 +50,7 @@ func ParseStructFields(toParse interface{}) ([]StructField, error) {
 
 		Name := field.Name
 		Type := field.Type.String()
-		Tag := field.Tag.Get("vx")
+		Tag := field.Tag.Get(VX_TAG_KEY)
 		Value := reflect.Indirect(reflect.ValueOf(toParse)).FieldByName(field.Name).String()
 
 		parsedData = append(parsedData, StructField{Name, Type, Tag, Value})
