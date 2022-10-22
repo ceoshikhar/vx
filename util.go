@@ -7,6 +7,7 @@ import (
 	"reflect"
 )
 
+// Pretty print non primitive types like struct, map, array, slice.
 func PrettyPrint(v interface{}) (err error) {
 	b, err := json.MarshalIndent(v, "", "  ")
 	if err == nil {
@@ -16,14 +17,18 @@ func PrettyPrint(v interface{}) (err error) {
 }
 
 type StructField struct {
-	Name  string
-	Type  string
-	Tag   string
+	// Name of the field.
+	Name string
+	// Type of the field.
+	Type string
+	// The `VX_TAG` tag on the field.
+	Tag string
+	// Value of this field.
 	Value string
 }
 
 func ParseStructFields(toParse interface{}) ([]StructField, error) {
-	// Could be any underlying type. Don't call `.Elem()`
+	// Could be any underlying type. DO NOT call `.Elem()` on it, it will panic.
 	val := reflect.ValueOf(toParse)
 
 	// If its a pointer, resolve its value.
@@ -31,7 +36,7 @@ func ParseStructFields(toParse interface{}) ([]StructField, error) {
 		val = reflect.Indirect(val)
 	}
 
-	// Should double check we now have a struct (could still be anything)
+	// Should double check we now have a struct (could still be anything).
 	if val.Kind() != reflect.Struct {
 		msg := fmt.Sprintf("util.ParseStructFields(): expected struct, received %s", val.Kind().String())
 		return nil, errors.New(msg)
