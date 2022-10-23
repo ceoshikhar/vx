@@ -9,3 +9,14 @@ const (
 	// }
 	VX_TAG_KEY = "vx"
 )
+
+type VxType string
+
+// VX supports validation for the following types.
+const (
+	TYPE_BYTE   VxType = "byte"
+	TYPE_FLOAT  VxType = "float"
+	TYPE_INT    VxType = "int"
+	TYPE_RUNE   VxType = "rune"
+	TYPE_STRING VxType = "string"
+)

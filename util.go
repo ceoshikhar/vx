@@ -28,7 +28,7 @@ type StructField struct {
 }
 
 func ParseStruct(toParse interface{}) ([]StructField, error) {
-	// Could be any underlying type. DO NOT call `.Elem()` on it, it will panic.
+	// Could be any underlying type. DO NOT call `.Elem()` on it, might panic.
 	val := reflect.ValueOf(toParse)
 
 	// If its a pointer, resolve its value.
@@ -36,14 +36,14 @@ func ParseStruct(toParse interface{}) ([]StructField, error) {
 		val = reflect.Indirect(val)
 	}
 
-	// Should double check we now have a struct (could still be anything).
+	// Double check now that we have a struct (could still be anything).
 	if val.Kind() != reflect.Struct {
 		msg := fmt.Sprintf("util.ParseStruct(): expected struct, received %s", val.Kind().String())
 		return nil, errors.New(msg)
 	}
 
 	valType := val.Type()
-	parsedData := []StructField{}
+	fields := []StructField{}
 
 	for i := 0; i < valType.NumField(); i++ {
 		field := valType.Field(i)
@@ -53,8 +53,8 @@ func ParseStruct(toParse interface{}) ([]StructField, error) {
 		Tag := field.Tag.Get(VX_TAG_KEY)
 		Value := reflect.Indirect(reflect.ValueOf(toParse)).FieldByName(field.Name).String()
 
-		parsedData = append(parsedData, StructField{Name, Type, Tag, Value})
+		fields = append(fields, StructField{Name, Type, Tag, Value})
 	}
 
-	return parsedData, nil
+	return fields, nil
 }
