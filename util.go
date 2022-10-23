@@ -27,7 +27,7 @@ type StructField struct {
 	Value string
 }
 
-func ParseStructFields(toParse interface{}) ([]StructField, error) {
+func ParseStruct(toParse interface{}) ([]StructField, error) {
 	// Could be any underlying type. DO NOT call `.Elem()` on it, it will panic.
 	val := reflect.ValueOf(toParse)
 
@@ -38,7 +38,7 @@ func ParseStructFields(toParse interface{}) ([]StructField, error) {
 
 	// Should double check we now have a struct (could still be anything).
 	if val.Kind() != reflect.Struct {
-		msg := fmt.Sprintf("util.ParseStructFields(): expected struct, received %s", val.Kind().String())
+		msg := fmt.Sprintf("util.ParseStruct(): expected struct, received %s", val.Kind().String())
 		return nil, errors.New(msg)
 	}
 

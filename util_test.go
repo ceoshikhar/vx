@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestParseStructFields(t *testing.T) {
+func TestParseStruct(t *testing.T) {
 	type user struct {
 		name  string `vx:"required"`
 		email string `vx:"min=3"`
@@ -25,14 +25,14 @@ func TestParseStructFields(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := ParseStructFields(test.arg)
+			got, err := ParseStruct(test.arg)
 
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
 			if !reflect.DeepEqual(got, test.want) {
-				t.Errorf("ParseStructFields() = %v, want %v", got, test.want)
+				t.Errorf("ParseStruct() = %v, want %v", got, test.want)
 			}
 		})
 	}
