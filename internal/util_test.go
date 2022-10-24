@@ -19,7 +19,7 @@ func TestParseStruct(t *testing.T) {
 		{
 			name: "user",
 			arg:  user{name: "Jon Doe", email: "jon@doe.com"},
-			want: []StructField{{Name: "name", Type: "string", Tag: "required", Value: "Jon Doe"}, {Name: "email", Type: "string", Tag: "min=3", Value: "jon@doe.com"}},
+			want: []StructField{{Name: "name", Type: "vx_string", Tag: "required", Value: "Jon Doe"}, {Name: "email", Type: "vx_string", Tag: "min=3", Value: "jon@doe.com"}},
 		},
 	}
 

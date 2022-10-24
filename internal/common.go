@@ -26,7 +26,7 @@ func MakeVxType(s string) (VxType, error) {
 	switch s {
 	case "string":
 		return TYPE_STRING, nil
-	case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "float32", "float64", "complex64", "complex128", "int", "uint", "uintptr", "interface {}":
+	case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "float32", "float64", "complex64", "complex128", "float", "int", "uint", "uintptr", "byte", "rune", "interface {}":
 		{
 			fmt.Println("MakeVxType: got unsupported type:", s)
 			return TYPE_UNSUPPORTED, nil
