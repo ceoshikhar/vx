@@ -1,4 +1,4 @@
-package vx
+package internal
 
 import (
 	"testing"
@@ -15,22 +15,22 @@ func TestAllVxTypePossible(t *testing.T) {
 		{
 			name: "TYPE_BYTE",
 			arg:  "type=byte",
-			want: TYPE_BYTE,
+			want: TYPE_UNSUPPORTED,
 		},
 		{
 			name: "TYPE_FLOAT",
 			arg:  "type=float",
-			want: TYPE_FLOAT,
+			want: TYPE_UNSUPPORTED,
 		},
 		{
 			name: "TYPE_INT",
 			arg:  "type=int,required",
-			want: TYPE_INT,
+			want: TYPE_UNSUPPORTED,
 		},
 		{
 			name: "TYPE_RUNE",
 			arg:  "type=rune",
-			want: TYPE_RUNE,
+			want: TYPE_UNSUPPORTED,
 		},
 		{
 			name: "TYPE_STRING",
@@ -41,7 +41,11 @@ func TestAllVxTypePossible(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := MakeTagFromString(test.arg)
+			got, err := MakeTag(test.arg)
+
+			if err != nil {
+				t.Errorf(err.Error())
+			}
 
 			if got.Type != test.want {
 				t.Errorf("got %v, want %v", got.Type, test.want)

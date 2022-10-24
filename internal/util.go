@@ -1,4 +1,4 @@
-package vx
+package internal
 
 import (
 	"encoding/json"
@@ -20,7 +20,7 @@ type StructField struct {
 	// Name of the field.
 	Name string
 	// Type of the field.
-	Type string
+	Type VxType
 	// The `VX_TAG` tag on the field.
 	Tag string
 	// Value of this field.
@@ -49,7 +49,12 @@ func ParseStruct(toParse interface{}) ([]StructField, error) {
 		field := valType.Field(i)
 
 		Name := field.Name
-		Type := field.Type.String()
+
+		Type, err := MakeVxType(field.Type.String())
+		if err != nil {
+			return nil, err
+		}
+
 		Tag := field.Tag.Get(VX_TAG_KEY)
 		Value := reflect.Indirect(reflect.ValueOf(toParse)).FieldByName(field.Name).String()
 

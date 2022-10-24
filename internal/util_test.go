@@ -1,4 +1,4 @@
-package vx
+package internal
 
 import (
 	"reflect"
