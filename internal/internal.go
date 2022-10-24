@@ -24,17 +24,20 @@ const (
 	TYPE_EMPTY       VxType = ""               // No "type" was explicity declared in the vx tag.
 	TYPE_UNKNOWN     VxType = "vx_unknown"     // We do not understand the underlying type.
 	TYPE_UNSUPPORTED VxType = "vx_unsupported" // We understand the underlying type but don't support it yet.
-	TYPE_ANY         VxType = "vx_any"         // interface{}
-	TYPE_STRING      VxType = "vx_string"
+	TYPE_ANY         VxType = "interface {}"   // interface{}
+	TYPE_INT         VxType = "int"
+	TYPE_STRING      VxType = "string"
 )
 
 func MakeVxType(s string) VxType {
 	switch s {
+	case "int":
+		return TYPE_INT
 	case "string":
 		return TYPE_STRING
 	case "interface {}":
 		return TYPE_ANY
-	case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "float32", "float64", "complex64", "complex128", "float", "int", "uint", "uintptr", "byte", "rune":
+	case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "float32", "float64", "complex64", "complex128", "float", "uint", "uintptr", "byte", "rune":
 		{
 			fmt.Println("MakeVxType: got unsupported type:", s)
 			return TYPE_UNSUPPORTED
@@ -83,7 +86,7 @@ func MakeTag(f StructField) (Tag, error) {
 	for _, split := range splits {
 		if strings.Contains(split, "minLength") {
 			if tag.Type != TYPE_ANY && tag.Type != TYPE_STRING {
-				return tag, fmt.Errorf("minLength: rule is applicable only to value of TYPE_STRING, but got type %s", tag.Type)
+				return tag, fmt.Errorf("minLength: rule is applicable only to value of type %s and %s, but got type %s", TYPE_ANY, TYPE_STRING, tag.Type)
 			}
 
 			v := strings.Split(split, "=")[1]
