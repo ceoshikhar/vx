@@ -1,7 +1,6 @@
 package vx
 
 import (
-	"fmt"
 	"strings"
 	"vx/internal"
 )
@@ -21,27 +20,23 @@ func (v VxError) Error() string {
 	return sb.String()
 }
 
-func ValidateStruct(v any) (ok bool, err error) {
-	structFields, err := internal.ParseStruct(v)
-
-	if err != nil {
-		return false, err
-	}
-
+func ValidateStruct(v any) (bool, VxError) {
 	vxErr := VxError{
 		errors: []error{},
 	}
 
-	for _, field := range structFields {
-		tag, err := internal.MakeTag(field.Tag)
+	structFields, err := internal.ParseStruct(v)
+	if err != nil {
+		vxErr.errors = append(vxErr.errors, err)
+		return false, vxErr
+	}
 
-		if tag.Type != field.Type {
-			err = fmt.Errorf("type mismatch - field '%s' type in struct is '%s' and type in tag is '%s'", field.Name, field.Type, tag.Type)
-			return false, err
-		}
+	for _, field := range structFields {
+		tag, err := internal.MakeTag(field)
 
 		if err != nil {
-			return false, err
+			vxErr.errors = append(vxErr.errors, err)
+			return false, vxErr
 		}
 
 		for _, rule := range tag.Rules {

@@ -5,17 +5,22 @@ import (
 	"testing"
 )
 
-func TestSimpleString(t *testing.T) {
+func TestValidateStruct(t *testing.T) {
 	type simpleString struct {
-		a string `vx:"type=string,minLength=3"`
+		a string `vx:"minLength=3"`
 	}
 
-	v := simpleString{a: "as"}
+	v := simpleString{a: "1"}
 	ok, err := ValidateStruct(v)
 
 	if !ok {
 		t.Error("Something went wrong while validating the struct:")
 		t.Error(err.Error())
+	}
+
+	if len(err.errors) != 1 {
+		t.Error(err.Error())
+		t.Errorf("expected to get exactly 1 validation error but got %v, check the errors above.", len(err.errors))
 	}
 
 	if !strings.Contains(err.Error(), "minLength") {
