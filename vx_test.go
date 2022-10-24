@@ -1,6 +1,7 @@
 package vx
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -10,19 +11,14 @@ func TestSimpleString(t *testing.T) {
 	}
 
 	v := simpleString{a: "as"}
-	ok, errors := ValidateStruct(v)
+	ok, err := ValidateStruct(v)
 
 	if !ok {
-		for _, err := range errors {
-			t.Log(err.Error())
-		}
-		t.Error("Something went wrong while validating the struct, check the errors above.")
+		t.Error("Something went wrong while validating the struct:")
+		t.Error(err.Error())
 	}
 
-	if len(errors) != 1 {
-		for _, err := range errors {
-			t.Log(err.Error())
-		}
-		t.Errorf("Expected to get exactly 1 validation error but got %v, check the errors above.", len(errors))
+	if !strings.Contains(err.Error(), "minLength") {
+		t.Error("minLength rule was supposed to fail but found no mention of it in the error")
 	}
 }
