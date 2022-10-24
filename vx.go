@@ -48,5 +48,7 @@ func ValidateStruct(v any) (bool, VxError) {
 		}
 	}
 
+	// fmt.Println(v, structFields, vxErr)
+
 	return true, vxErr
 }

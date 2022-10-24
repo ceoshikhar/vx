@@ -71,11 +71,32 @@ func TestValidateStruct(t *testing.T) {
 			want: want{false, 1},
 		},
 		{
-			name: "rule: minLength of 3 with field of type any",
+			name: "rule: minLength of 3 with field of type any with string value should fail",
 			arg: ruleMinLength3WithAny{
 				a: "ab",
 			},
 			want: want{true, 1},
+		},
+		{
+			name: "rule: minLength of 3 with field of type any with int value should fail",
+			arg: ruleMinLength3WithAny{
+				a: 12,
+			},
+			want: want{true, 1},
+		},
+		{
+			name: "rule: minLength of 3 with field of type any with string value should pass",
+			arg: ruleMinLength3WithAny{
+				a: "abcd",
+			},
+			want: want{true, 0},
+		},
+		{
+			name: "rule: minLength of 3 with field of type any with int value should pass",
+			arg: ruleMinLength3WithAny{
+				a: 1234,
+			},
+			want: want{true, 0},
 		},
 	}
 
