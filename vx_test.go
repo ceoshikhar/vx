@@ -25,6 +25,10 @@ func TestValidateStruct(t *testing.T) {
 		a interface{} `vx:"minLength=3"`
 	}
 
+	type ruleMinLength3WithInt struct {
+		a int `vx:"minLength=3"`
+	}
+
 	type want struct {
 		ok    bool
 		count int
@@ -97,6 +101,20 @@ func TestValidateStruct(t *testing.T) {
 				a: 1234,
 			},
 			want: want{true, 0},
+		},
+		{
+			name: "rule: minLength of 3 with field of type any with bool value should pass",
+			arg: ruleMinLength3WithAny{
+				a: false,
+			},
+			want: want{true, 0},
+		},
+		{
+			name: "rule: minLength of 3 with with int value should fail",
+			arg: ruleMinLength3WithInt{
+				a: 1234,
+			},
+			want: want{false, 1},
 		},
 	}
 
