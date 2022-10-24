@@ -1,7 +1,6 @@
 package vx
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -12,8 +11,6 @@ func TestSimpleString(t *testing.T) {
 
 	v := simpleString{a: "as"}
 	ok, errors := ValidateStruct(v)
-
-	fmt.Println(ok, errors)
 
 	if !ok {
 		for _, err := range errors {
