@@ -24,6 +24,7 @@ const (
 	TYPE_EMPTY       VxType = ""               // No "type" was explicity declared in the vx tag.
 	TYPE_UNKNOWN     VxType = "vx_unknown"     // We do not understand the underlying type.
 	TYPE_UNSUPPORTED VxType = "vx_unsupported" // We understand the underlying type but don't support it yet.
+	TYPE_ANY         VxType = "vx_any"         // interface{}
 	TYPE_STRING      VxType = "vx_string"
 )
 
@@ -31,7 +32,9 @@ func MakeVxType(s string) VxType {
 	switch s {
 	case "string":
 		return TYPE_STRING
-	case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "float32", "float64", "complex64", "complex128", "float", "int", "uint", "uintptr", "byte", "rune", "interface {}":
+	case "interface {}":
+		return TYPE_ANY
+	case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "float32", "float64", "complex64", "complex128", "float", "int", "uint", "uintptr", "byte", "rune":
 		{
 			fmt.Println("MakeVxType: got unsupported type:", s)
 			return TYPE_UNSUPPORTED
@@ -79,7 +82,7 @@ func MakeTag(f StructField) (Tag, error) {
 	// Looping second time to build rules.
 	for _, split := range splits {
 		if strings.Contains(split, "minLength") {
-			if tag.Type != TYPE_STRING {
+			if tag.Type != TYPE_ANY && tag.Type != TYPE_STRING {
 				return tag, fmt.Errorf("minLength: rule is applicable only to value of TYPE_STRING, but got type %s", tag.Type)
 			}
 
@@ -87,7 +90,11 @@ func MakeTag(f StructField) (Tag, error) {
 
 			i, err := strconv.Atoi(v)
 			if err != nil {
-				return tag, fmt.Errorf("MakeTag: value provided to rule minLength should be a valid integer, got %s", v)
+				return tag, fmt.Errorf("MakeTag: value provided to rule minLength should be an integer, got %s", v)
+			}
+
+			if i <= 0 {
+				return tag, fmt.Errorf("MakeTag: value provided to rule minLength should be greater than 0, got %s", v)
 			}
 
 			rule := makeMinLength(i)
@@ -133,7 +140,7 @@ func ParseStruct(toParse interface{}) ([]StructField, error) {
 		Name := field.Name
 		Type := MakeVxType(field.Type.String())
 		Tag := field.Tag.Get(VX_TAG_KEY)
-		Value := reflect.Indirect(reflect.ValueOf(toParse)).FieldByName(field.Name).String()
+		Value := fmt.Sprintf("%v", reflect.Indirect(reflect.ValueOf(toParse)).FieldByName(field.Name))
 
 		fields = append(fields, StructField{Name, Type, Tag, Value})
 	}
