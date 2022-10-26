@@ -34,6 +34,10 @@ func TestValidateStruct(t *testing.T) {
 		b string `vx:"minLength=ab"`
 	}
 
+	type structAnyTagInt struct {
+		age interface{} `vx:"type=int"`
+	}
+
 	type want struct {
 		ok    bool
 		count int
@@ -122,12 +126,19 @@ func TestValidateStruct(t *testing.T) {
 			want: want{false, 1},
 		},
 		{
-			name: "rule: rule required should fail because field is nil",
+			name: "rule: minlength should return internal error for both fields",
 			arg: twoStringFields{
 				a: "ab",
 				b: "abc",
 			},
 			want: want{false, 2},
+		},
+		{
+			name: "type expected to be int error",
+			arg: structAnyTagInt{
+				age: "abc",
+			},
+			want: want{true, 1},
 		},
 	}
 

@@ -55,16 +55,16 @@ type Tag struct {
 	Rules []rule
 }
 
-func MakeTag(f StructField) (Tag, error) {
+func MakeTag(field StructField) (Tag, error) {
 	tag := Tag{
 		Type:  TYPE_EMPTY,
 		Rules: []rule{},
 	}
 
-	splits := strings.Split(f.Tag, ",")
+	splits := strings.Split(field.Tag, ",")
 
 	// Looping first time to just get the "type".
-	// @PERFORMANCE: technicallly the time complexity remains O(n) even if we
+	// PERFORMANCE: technicallly the time complexity remains O(n) even if we
 	// loop twice over `splits` but maybe consider not looping twice?
 	for _, split := range splits {
 		if strings.Contains(split, "type") {
@@ -73,12 +73,13 @@ func MakeTag(f StructField) (Tag, error) {
 
 	}
 
+	// No explicit `type` was provided in the tag.
 	if tag.Type == TYPE_EMPTY {
-		tag.Type = f.Type
+		tag.Type = field.Type
 	}
 
-	if tag.Type != f.Type {
-		err := fmt.Errorf("type mismatch - field '%s' type in struct is '%s' and type in tag is '%s'", f.Name, f.Type, tag.Type)
+	if tag.Type != field.Type && field.Type != TYPE_ANY {
+		err := fmt.Errorf("type mismatch - field '%s' type in struct is '%s' and type in tag is '%s'", field.Name, field.Type, tag.Type)
 		return tag, err
 	}
 
@@ -116,7 +117,7 @@ type StructField struct {
 	// The `VX_TAG` tag on the field.
 	Tag string
 	// Value of this field.
-	Value string
+	Value any
 }
 
 type VxStruct struct {
@@ -163,7 +164,7 @@ func ParseStruct(toParse interface{}) (VxStruct, error) {
 
 // This interface should be implemented by everything but "type" in the "vx" tag.
 type rule interface {
-	Exec(v any) error
+	Exec(field StructField) error
 }
 
 //
@@ -178,8 +179,8 @@ func makeMinLength(l int) minLength {
 	return minLength{l}
 }
 
-func (m minLength) Exec(v any) error {
-	s, ok := v.(string)
+func (m minLength) Exec(field StructField) error {
+	s, ok := field.Value.(string)
 
 	if !ok {
 		return errors.New("minLength: rule was exec against a value that is not a string")

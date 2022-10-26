@@ -51,6 +51,7 @@ func ValidateStruct(v any) (VxError, bool) {
 			ok = false
 			vxErr.errors = append(vxErr.errors, err)
 		}
+
 		tagMap[field.Name] = tag
 		fieldMap[field.Name] = field
 	}
@@ -62,9 +63,49 @@ func ValidateStruct(v any) (VxError, bool) {
 	}
 
 	for fieldName, tag := range tagMap {
+		switch tag.Type {
+		case internal.TYPE_INT:
+			{
+				field := fieldMap[fieldName]
+				v, ok := field.Value.(int)
+				if !ok {
+					vxErr.errors = append(vxErr.errors, fmt.Errorf("%s should be an int", field.Name))
+				}
+
+				field.Value = v
+				break
+			}
+		case internal.TYPE_STRING:
+			{
+				field := fieldMap[fieldName]
+				v, ok := field.Value.(string)
+				if !ok {
+					vxErr.errors = append(vxErr.errors, fmt.Errorf("%s should be a string", field.Name))
+				}
+
+				field.Value = v
+				break
+			}
+		default:
+			{
+				// Nothing to do here.
+			}
+		}
+	}
+
+	// If we have collected some errors and have reached here that means these
+	// errors are due to the fact that some field(s) type casting failed.
+	// We don't execute Rules and return here with type casting errors.
+	if len(vxErr.errors) > 0 {
+		ok = true
+		return vxErr, ok
+	}
+
+	for fieldName, tag := range tagMap {
 		field := fieldMap[fieldName]
+
 		for _, rule := range tag.Rules {
-			err := rule.Exec(field.Value)
+			err := rule.Exec(field)
 			if err != nil {
 				err = fmt.Errorf("%s.%s - %s", parsedStruct.Name, field.Name, err)
 				vxErr.errors = append(vxErr.errors, err)
