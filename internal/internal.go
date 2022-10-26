@@ -93,11 +93,11 @@ func MakeTag(f StructField) (Tag, error) {
 
 			i, err := strconv.Atoi(v)
 			if err != nil {
-				return tag, fmt.Errorf("MakeTag: value provided to rule minLength should be an integer, got %s", v)
+				return tag, fmt.Errorf("minLength: value provided to rule should be an integer, got %s", v)
 			}
 
 			if i <= 0 {
-				return tag, fmt.Errorf("MakeTag: value provided to rule minLength should be greater than 0, got %s", v)
+				return tag, fmt.Errorf("minLength: value provided to rule should be greater than 0, got %s", v)
 			}
 
 			rule := makeMinLength(i)

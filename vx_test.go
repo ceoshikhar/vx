@@ -72,7 +72,7 @@ func TestValidateStruct(t *testing.T) {
 			arg: ruleMinLength0{
 				a: "happy",
 			},
-			want: want{false, 1},
+			want: want{true, 1},
 		},
 		{
 			name: "rule: minLength of 3 with field of type any with string value should fail",
@@ -114,7 +114,7 @@ func TestValidateStruct(t *testing.T) {
 			arg: ruleMinLength3WithInt{
 				a: 1234,
 			},
-			want: want{false, 1},
+			want: want{true, 1},
 		},
 	}
 

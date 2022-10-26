@@ -28,20 +28,21 @@ func ValidateStruct(v any) (bool, VxError) {
 	structFields, err := internal.ParseStruct(v)
 	if err != nil {
 		vxErr.errors = append(vxErr.errors, err)
+		// This is the only case where we early return because if this fails
+		// there is literally nothing more we can do after this.
 		return false, vxErr
 	}
 
+	// NOTE: do not return if `MakeTag` fails for a field. We want to collect
+	// all the errors for all fields first and then return them at the end.
 	for _, field := range structFields {
 		tag, err := internal.MakeTag(field)
-
 		if err != nil {
 			vxErr.errors = append(vxErr.errors, err)
-			return false, vxErr
 		}
 
 		for _, rule := range tag.Rules {
 			err := rule.Exec(field.Value)
-
 			if err != nil {
 				vxErr.errors = append(vxErr.errors, err)
 			}
