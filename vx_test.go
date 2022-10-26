@@ -29,6 +29,11 @@ func TestValidateStruct(t *testing.T) {
 		a int `vx:"minLength=3"`
 	}
 
+	type twoStringFields struct {
+		a string `vx:"minLength=0"`
+		b string `vx:"minLength=ab"`
+	}
+
 	type want struct {
 		ok    bool
 		count int
@@ -72,7 +77,7 @@ func TestValidateStruct(t *testing.T) {
 			arg: ruleMinLength0{
 				a: "happy",
 			},
-			want: want{true, 1},
+			want: want{false, 1},
 		},
 		{
 			name: "rule: minLength of 3 with field of type any with string value should fail",
@@ -114,22 +119,30 @@ func TestValidateStruct(t *testing.T) {
 			arg: ruleMinLength3WithInt{
 				a: 1234,
 			},
-			want: want{true, 1},
+			want: want{false, 1},
+		},
+		{
+			name: "rule: rule required should fail because field is nil",
+			arg: twoStringFields{
+				a: "ab",
+				b: "abc",
+			},
+			want: want{false, 2},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ok, err := ValidateStruct(test.arg)
+			res, ok := ValidateStruct(test.arg)
 
 			if ok != test.want.ok {
-				t.Error(err.Error())
-				t.Errorf("expected ok to be %v but got %v, check the errors above", ok, test.want.ok)
+				t.Error(res.Error())
+				t.Errorf("expected ok to be %v but got %v, check the errors above", test.want.ok, ok)
 			}
 
-			if len(err.errors) != test.want.count {
-				t.Error(err.Error())
-				t.Errorf("expected to get exactly %v number of validation errors but got %v, check the errors above.", test.want.count, len(err.errors))
+			if len(res.errors) != test.want.count {
+				t.Error(res.Error())
+				t.Errorf("expected to get exactly %v number of validation errors but got %v, check the errors above.", test.want.count, len(res.errors))
 			}
 
 		})

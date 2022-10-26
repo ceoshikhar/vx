@@ -119,7 +119,14 @@ type StructField struct {
 	Value string
 }
 
-func ParseStruct(toParse interface{}) ([]StructField, error) {
+type VxStruct struct {
+	// Name of the struct.
+	Name string
+	// Fields in the struct.
+	Fields []StructField
+}
+
+func ParseStruct(toParse interface{}) (VxStruct, error) {
 	// Could be any underlying type. DO NOT call `.Elem()` on it, might panic.
 	val := reflect.ValueOf(toParse)
 
@@ -130,8 +137,8 @@ func ParseStruct(toParse interface{}) ([]StructField, error) {
 
 	// Double check now that we have a struct (could still be anything).
 	if val.Kind() != reflect.Struct {
-		msg := fmt.Sprintf("util.ParseStruct(): expected struct, received %s", val.Kind().String())
-		return nil, errors.New(msg)
+		msg := fmt.Sprintf("expected struct, received %s", val.Kind().String())
+		return VxStruct{}, errors.New(msg)
 	}
 
 	valType := val.Type()
@@ -148,7 +155,10 @@ func ParseStruct(toParse interface{}) ([]StructField, error) {
 		fields = append(fields, StructField{Name, Type, Tag, Value})
 	}
 
-	return fields, nil
+	return VxStruct{
+		Name:   val.Type().Name(),
+		Fields: fields,
+	}, nil
 }
 
 // This interface should be implemented by everything but "type" in the "vx" tag.
@@ -176,7 +186,7 @@ func (m minLength) Exec(v any) error {
 	}
 
 	if len(s) < m.value {
-		return fmt.Errorf("minLength: minimum length allowed was 3 but got %v", len(s))
+		return fmt.Errorf("minimum length allowed is 3 but got %v", len(s))
 	}
 
 	return nil
