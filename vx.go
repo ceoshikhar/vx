@@ -7,14 +7,14 @@ import (
 	"vx/internal"
 )
 
-type VxError struct {
-	errors []error
+type VxResult struct {
+	Errors []error
 }
 
-func (v VxError) Error() string {
+func (v VxResult) Error() string {
 	var sb strings.Builder
 
-	for _, err := range v.errors {
+	for _, err := range v.Errors {
 		sb.WriteString("\n")
 		sb.WriteString(err.Error())
 	}
@@ -22,17 +22,17 @@ func (v VxError) Error() string {
 	return sb.String()
 }
 
-func ValidateStruct(v any) (VxError, bool) {
+func ValidateStruct(v any) (VxResult, bool) {
 	// If ok is false that means the error was caused due to something else other
 	// than validating the struct. Something went wrong before the validation.
 	ok := true
-	vxErr := VxError{
-		errors: []error{},
+	vxErr := VxResult{
+		Errors: []error{},
 	}
 
 	parsedStruct, err := internal.ParseStruct(v)
 	if err != nil {
-		vxErr.errors = append(vxErr.errors, err)
+		vxErr.Errors = append(vxErr.Errors, err)
 		ok = false
 		// This is the only case where we early return because if this fails
 		// there is literally nothing more we can do after this.
@@ -49,7 +49,7 @@ func ValidateStruct(v any) (VxError, bool) {
 		tag, err := internal.MakeTag(field)
 		if err != nil {
 			ok = false
-			vxErr.errors = append(vxErr.errors, err)
+			vxErr.Errors = append(vxErr.Errors, err)
 		}
 
 		tagMap[field.Name] = tag
@@ -62,41 +62,29 @@ func ValidateStruct(v any) (VxError, bool) {
 		return vxErr, ok
 	}
 
-	for fieldName, field := range fieldMap {
-		switch field.Type.Kind() {
-		case reflect.Int:
-			{
-				field := fieldMap[fieldName]
-				v, ok := field.Value.(int)
-				if !ok {
-					vxErr.errors = append(vxErr.errors, fmt.Errorf("%s should be an int", field.Name))
-				}
-
-				field.Value = v
-				break
-			}
-		case reflect.String:
-			{
-				field := fieldMap[fieldName]
-				v, ok := field.Value.(string)
-				if !ok {
-					vxErr.errors = append(vxErr.errors, fmt.Errorf("%s should be a string", field.Name))
-				}
-
-				field.Value = v
-				break
-			}
-		default:
-			{
-				// Nothing to do here.
-			}
+	for _, field := range parsedStruct.Fields {
+		if field.Type != field.ValueType && field.Type.Kind() != reflect.Interface {
+			vxErr.Errors = append(vxErr.Errors, fmt.Errorf("%s should be of type %s", field.Name, field.Type))
 		}
+
+		// This is a bit tricky. Although we have a "required" Rule to check and warn
+		// the user if a required value is not present or "empty" but if the developer
+		// forgets to add the "required" Rule and then reads this field, that would
+		// lead to a panic during runtime, which is NOT SO GOOD !!
+		//
+		// So in order to prevent the runtime panics for Vx users, we will set the
+		// field.Value to be a default of the type that was being expected. If the
+		// expected type is any, we will default it to empty string.
+		if field.Value == nil {
+			fmt.Printf("YIKES! rhis is bad, %s is nil which can be a nasty runtime error.", field.Name)
+		}
+
 	}
 
 	// If we have collected some errors and have reached here that means these
 	// errors are due to the fact that some field(s) type casting failed.
 	// We don't execute Rules and return here with type casting errors.
-	if len(vxErr.errors) > 0 {
+	if len(vxErr.Errors) > 0 {
 		ok = true
 		return vxErr, ok
 	}
@@ -107,13 +95,13 @@ func ValidateStruct(v any) (VxError, bool) {
 		for _, rule := range tag.Rules {
 			err := rule.Exec(field)
 			if err != nil {
-				vxErr.errors = append(vxErr.errors, err)
+				vxErr.Errors = append(vxErr.Errors, err)
 			}
 		}
 	}
 
-	// fmt.Println("ParsedStruct:", parsedStruct)
-	// fmt.Println("Result:", ok, vxErr)
+	fmt.Println("\nParsedStruct:", parsedStruct)
+	fmt.Println("\nResult:", ok, vxErr)
 
 	return vxErr, ok
 }

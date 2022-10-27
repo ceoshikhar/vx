@@ -18,16 +18,94 @@ const (
 	VX_TAG_KEY = "vx"
 )
 
+type VxType string
+
+const (
+	TYPE_EMPTY       VxType = "vx_empty"       // No "type" was explicity declared in the vx tag.
+	TYPE_UNKNOWN     VxType = "vx_unknown"     // We do not understand the underlying type.
+	TYPE_UNSUPPORTED VxType = "vx_unsupported" // We understand the underlying type but don't support it yet.
+	TYPE_INTERFACE   VxType = "interface {}"   // any
+	TYPE_INT         VxType = "int"
+	TYPE_STRING      VxType = "string"
+)
+
+func MakeVxType(s string) VxType {
+	switch s {
+	case "int":
+		return TYPE_INT
+	case "string":
+		return TYPE_STRING
+	case "interface {}":
+		return TYPE_INTERFACE
+	case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "float32", "float64", "complex64", "complex128", "float", "uint", "uintptr", "byte", "rune":
+		{
+			fmt.Println("MakeVxType: got unsupported type:", s)
+			return TYPE_UNSUPPORTED
+		}
+	default:
+		{
+			fmt.Println("couldn't figure out VxType from the string:", s)
+			return TYPE_UNKNOWN
+		}
+	}
+}
+
+func MakeVxTypeFromKind(t reflect.Kind) VxType {
+	switch t {
+	case reflect.Float64:
+		return TYPE_INT
+	case reflect.String:
+		return TYPE_STRING
+	case reflect.Interface:
+		return TYPE_INTERFACE
+	// case "bool", uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "float32", "float64", "complex64", "complex128", "float", "uint", "uintptr", "byte", "rune":
+	default:
+		{
+			return TYPE_UNSUPPORTED
+		}
+	}
+}
+
 type Tag struct {
+	Type  VxType
 	Rules []rule
 }
 
 func MakeTag(field VxField) (Tag, error) {
 	tag := Tag{
+		Type:  TYPE_EMPTY,
 		Rules: []rule{},
 	}
 
 	splits := strings.Split(field.Tag, ",")
+
+	// Looping first time to just get the "type".
+	// PERFORMANCE: technicallly the time complexity remains O(n) even if we
+	// loop twice over `splits` but maybe consider not looping twice?
+	for _, split := range splits {
+		if strings.Contains(split, "type") {
+			tag.Type = MakeVxType(strings.Split(split, "=")[1])
+		}
+
+	}
+
+	// No explicit `type` was provided in the tag.
+	if tag.Type == TYPE_EMPTY {
+		tag.Type = MakeVxTypeFromKind(field.Type.Kind())
+	}
+
+	if tag.Type != MakeVxTypeFromKind(field.Type.Kind()) && MakeVxTypeFromKind(field.Type.Kind()) != TYPE_INTERFACE {
+		err := fmt.Errorf("type mismatch: %s type in struct is '%s' and in tag is '%s'", field.Name, field.Type, tag.Type)
+		return tag, err
+	}
+
+	// NOTE: `field.ValueType.Kind()` panics when `field.Value` is `nil` !!!
+	if field.Value != nil {
+		if tag.Type != MakeVxTypeFromKind(field.ValueType.Kind()) && tag.Type != TYPE_INTERFACE {
+			err := fmt.Errorf("%s should be of type %s but got %s", field.Name, tag.Type, MakeVxTypeFromKind(field.ValueType.Kind()))
+			return tag, err
+		}
+	}
 
 	// Looping second time to build rules.
 	for _, split := range splits {
@@ -153,7 +231,7 @@ func makeMinLength(l int) minLength {
 }
 
 func (r minLength) Exec(field VxField) error {
-	wrongTypeErr := fmt.Errorf("%s - minLength: rule can be applied to type string or any but got %s", field.Name, TypeOf(field.Value))
+	wrongTypeErr := fmt.Errorf("%s - minLength: rule can only be applied to type string but was applied to type %s", field.Name, TypeOf(field.Value))
 
 	if field.Type.Kind() != reflect.String && field.Type.Kind() != reflect.Interface {
 		return wrongTypeErr
