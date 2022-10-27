@@ -18,70 +18,16 @@ const (
 	VX_TAG_KEY = "vx"
 )
 
-type VxType string
-
-const (
-	TYPE_EMPTY       VxType = ""               // No "type" was explicity declared in the vx tag.
-	TYPE_UNKNOWN     VxType = "vx_unknown"     // We do not understand the underlying type.
-	TYPE_UNSUPPORTED VxType = "vx_unsupported" // We understand the underlying type but don't support it yet.
-	TYPE_ANY         VxType = "interface {}"   // interface{}
-	TYPE_INT         VxType = "int"
-	TYPE_STRING      VxType = "string"
-)
-
-func MakeVxType(s string) VxType {
-	switch s {
-	case "int":
-		return TYPE_INT
-	case "string":
-		return TYPE_STRING
-	case "interface {}":
-		return TYPE_ANY
-	case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "float32", "float64", "complex64", "complex128", "float", "uint", "uintptr", "byte", "rune":
-		{
-			fmt.Println("MakeVxType: got unsupported type:", s)
-			return TYPE_UNSUPPORTED
-		}
-	default:
-		{
-			fmt.Println("couldn't figure out VxType from the string:", s)
-			return TYPE_UNKNOWN
-		}
-	}
-}
-
 type Tag struct {
-	Type  VxType
 	Rules []rule
 }
 
 func MakeTag(field StructField) (Tag, error) {
 	tag := Tag{
-		Type:  TYPE_EMPTY,
 		Rules: []rule{},
 	}
 
 	splits := strings.Split(field.Tag, ",")
-
-	// Looping first time to just get the "type".
-	// PERFORMANCE: technicallly the time complexity remains O(n) even if we
-	// loop twice over `splits` but maybe consider not looping twice?
-	for _, split := range splits {
-		if strings.Contains(split, "type") {
-			tag.Type = MakeVxType(strings.Split(split, "=")[1])
-		}
-
-	}
-
-	// No explicit `type` was provided in the tag.
-	if tag.Type == TYPE_EMPTY {
-		tag.Type = field.Type
-	}
-
-	if tag.Type != field.Type && field.Type != TYPE_ANY {
-		err := fmt.Errorf("type mismatch - field '%s' type in struct is '%s' and type in tag is '%s'", field.Name, field.Type, tag.Type)
-		return tag, err
-	}
 
 	// Looping second time to build rules.
 	for _, split := range splits {
@@ -114,7 +60,7 @@ type StructField struct {
 	// Name of the field.
 	Name string
 	// Type of the field.
-	Type VxType
+	Type reflect.Type
 	// The `VX_TAG` tag on the field.
 	Tag string
 	// Value of this field.
@@ -150,7 +96,7 @@ func ParseStruct(toParse interface{}) (VxStruct, error) {
 		field := valType.Field(i)
 
 		Name := field.Name
-		Type := MakeVxType(field.Type.String())
+		Type := field.Type
 		Tag := field.Tag.Get(VX_TAG_KEY)
 		Value := reflect.Indirect(reflect.ValueOf(toParse)).FieldByName(field.Name).Interface()
 
@@ -201,7 +147,7 @@ func makeMinLength(l int) minLength {
 func (r minLength) Exec(field StructField) error {
 	wrongTypeErr := fmt.Errorf("%s - minLength: rule can be applied to type string or any but got %s", field.Name, TypeOf(field.Value))
 
-	if field.Type != TYPE_STRING && field.Type != TYPE_ANY {
+	if field.Type.Kind() != reflect.String && field.Type.Kind() != reflect.Interface {
 		return wrongTypeErr
 	}
 

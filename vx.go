@@ -2,6 +2,7 @@ package vx
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"vx/internal"
 )
@@ -61,9 +62,9 @@ func ValidateStruct(v any) (VxError, bool) {
 		return vxErr, ok
 	}
 
-	for fieldName, tag := range tagMap {
-		switch tag.Type {
-		case internal.TYPE_INT:
+	for fieldName, field := range fieldMap {
+		switch field.Type.Kind() {
+		case reflect.Int:
 			{
 				field := fieldMap[fieldName]
 				v, ok := field.Value.(int)
@@ -74,7 +75,7 @@ func ValidateStruct(v any) (VxError, bool) {
 				field.Value = v
 				break
 			}
-		case internal.TYPE_STRING:
+		case reflect.String:
 			{
 				field := fieldMap[fieldName]
 				v, ok := field.Value.(string)
@@ -111,7 +112,7 @@ func ValidateStruct(v any) (VxError, bool) {
 		}
 	}
 
-	fmt.Println(v, parsedStruct, vxErr)
+	// fmt.Println(v, parsedStruct, vxErr)
 	// fmt.Println("Result:", ok, vxErr)
 
 	return vxErr, ok
