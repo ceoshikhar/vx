@@ -9,7 +9,7 @@ import (
 
 type user struct {
 	Name string      `json:"name" vx:"required"`
-	Age  interface{} `json:"age" vx:"required, type=int"`
+	Age  interface{} `json:"age" vx:"type=int, required"`
 }
 
 func test(w http.ResponseWriter, req *http.Request) {
