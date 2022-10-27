@@ -47,7 +47,6 @@ func ValidateStruct(v any) (VxError, bool) {
 	for _, field := range parsedStruct.Fields {
 		tag, err := internal.MakeTag(field)
 		if err != nil {
-			err = fmt.Errorf("%s.%s - %s", parsedStruct.Name, field.Name, err)
 			ok = false
 			vxErr.errors = append(vxErr.errors, err)
 		}
@@ -107,13 +106,13 @@ func ValidateStruct(v any) (VxError, bool) {
 		for _, rule := range tag.Rules {
 			err := rule.Exec(field)
 			if err != nil {
-				err = fmt.Errorf("%s.%s - %s", parsedStruct.Name, field.Name, err)
 				vxErr.errors = append(vxErr.errors, err)
 			}
 		}
 	}
 
-	// fmt.Println(v, structFields, vxErr)
+	fmt.Println(v, parsedStruct, vxErr)
+	// fmt.Println("Result:", ok, vxErr)
 
 	return vxErr, ok
 }

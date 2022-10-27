@@ -100,6 +100,11 @@ func MakeTag(field StructField) (Tag, error) {
 			rule := makeMinLength(i)
 			tag.Rules = append(tag.Rules, rule)
 		}
+
+		if strings.Contains(split, "required") {
+			rule := makeRequired()
+			tag.Rules = append(tag.Rules, rule)
+		}
 	}
 
 	return tag, nil
@@ -164,7 +169,25 @@ type rule interface {
 }
 
 //
-// String specific rules
+// Rules allowed for all types.
+//
+
+type required struct{}
+
+func makeRequired() required {
+	return required{}
+}
+
+func (r required) Exec(field StructField) error {
+	if field.Value == nil || field.Value == "" {
+		return fmt.Errorf("%s is required", field.Name)
+	}
+
+	return nil
+}
+
+//
+// Rules allowed only for string.
 //
 
 type minLength struct {
@@ -175,8 +198,8 @@ func makeMinLength(l int) minLength {
 	return minLength{l}
 }
 
-func (m minLength) Exec(field StructField) error {
-	wrongTypeErr := fmt.Errorf("minLength: rule can be applied to type string or any but got %s", TypeOf(field.Value))
+func (r minLength) Exec(field StructField) error {
+	wrongTypeErr := fmt.Errorf("%s - minLength: rule can be applied to type string or any but got %s", field.Name, TypeOf(field.Value))
 
 	if field.Type != TYPE_STRING && field.Type != TYPE_ANY {
 		return wrongTypeErr
@@ -187,8 +210,8 @@ func (m minLength) Exec(field StructField) error {
 		return wrongTypeErr
 	}
 
-	if len(s) < m.value {
-		return fmt.Errorf("should have a minimum length of %v but has %v", m.value, len(s))
+	if len(s) < r.value {
+		return fmt.Errorf("%s should have a minimum length of %v but has %v", field.Name, r.value, len(s))
 	}
 
 	return nil

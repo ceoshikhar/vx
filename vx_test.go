@@ -35,7 +35,7 @@ func TestValidateStruct(t *testing.T) {
 	}
 
 	type ruleRequired struct {
-		A string `vx:"required"`
+		A any `vx:"required"`
 	}
 
 	type structAnyTagInt struct {
@@ -153,8 +153,24 @@ func TestValidateStruct(t *testing.T) {
 		},
 		{
 			name: "rule: required should fail because field is nil",
-			arg:  ruleRequired{},
+			arg: ruleRequired{
+				A: nil,
+			},
 			want: want{true, 1},
+		},
+		{
+			name: "rule: required should pass because 0 is valid",
+			arg: ruleRequired{
+				A: 0,
+			},
+			want: want{true, 0},
+		},
+		{
+			name: "rule: required should pass because false is valid",
+			arg: ruleRequired{
+				A: false,
+			},
+			want: want{true, 0},
 		},
 	}
 
