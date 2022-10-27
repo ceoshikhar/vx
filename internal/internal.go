@@ -86,19 +86,15 @@ func MakeTag(field StructField) (Tag, error) {
 	// Looping second time to build rules.
 	for _, split := range splits {
 		if strings.Contains(split, "minLength") {
-			if tag.Type != TYPE_ANY && tag.Type != TYPE_STRING {
-				return tag, fmt.Errorf("minLength: rule is applicable only to value of type %s and %s, but got type %s", TYPE_ANY, TYPE_STRING, tag.Type)
-			}
-
 			v := strings.Split(split, "=")[1]
 
 			i, err := strconv.Atoi(v)
 			if err != nil {
-				return tag, fmt.Errorf("minLength: value provided to rule should be an integer, got %s", v)
+				return tag, fmt.Errorf("minLength: should be an integer, got %s", v)
 			}
 
 			if i <= 0 {
-				return tag, fmt.Errorf("minLength: value provided to rule should be greater than 0, got %s", v)
+				return tag, fmt.Errorf("minLength: should be greater than 0, got %s", v)
 			}
 
 			rule := makeMinLength(i)
@@ -151,7 +147,7 @@ func ParseStruct(toParse interface{}) (VxStruct, error) {
 		Name := field.Name
 		Type := MakeVxType(field.Type.String())
 		Tag := field.Tag.Get(VX_TAG_KEY)
-		Value := fmt.Sprintf("%v", reflect.Indirect(reflect.ValueOf(toParse)).FieldByName(field.Name))
+		Value := reflect.Indirect(reflect.ValueOf(toParse)).FieldByName(field.Name).Interface()
 
 		fields = append(fields, StructField{Name, Type, Tag, Value})
 	}
@@ -180,14 +176,19 @@ func makeMinLength(l int) minLength {
 }
 
 func (m minLength) Exec(field StructField) error {
-	s, ok := field.Value.(string)
+	wrongTypeErr := fmt.Errorf("minLength: rule can be applied to type string or any but got %s", TypeOf(field.Value))
 
+	if field.Type != TYPE_STRING && field.Type != TYPE_ANY {
+		return wrongTypeErr
+	}
+
+	s, ok := field.Value.(string)
 	if !ok {
-		return errors.New("minLength: rule was exec against a value that is not a string")
+		return wrongTypeErr
 	}
 
 	if len(s) < m.value {
-		return fmt.Errorf("minimum length allowed is 3 but got %v", len(s))
+		return fmt.Errorf("should have a minimum length of %v but has %v", m.value, len(s))
 	}
 
 	return nil

@@ -6,36 +6,40 @@ import (
 
 func TestValidateStruct(t *testing.T) {
 	type noTag struct {
-		a string
+		A string
 	}
 
 	type emptyTag struct {
-		a string `vx:""`
+		A string `vx:""`
 	}
 
 	type ruleMinLength5 struct {
-		a string `vx:"minLength=5"`
+		A string `vx:"minLength=5"`
 	}
 
 	type ruleMinLength0 struct {
-		a string `vx:"minLength=0"`
+		A string `vx:"minLength=0"`
 	}
 
 	type ruleMinLength3WithAny struct {
-		a interface{} `vx:"minLength=3"`
+		A interface{} `vx:"minLength=3"`
 	}
 
 	type ruleMinLength3WithInt struct {
-		a int `vx:"minLength=3"`
+		Lmao int `vx:"minLength=3"`
 	}
 
 	type twoStringFields struct {
-		a string `vx:"minLength=0"`
-		b string `vx:"minLength=ab"`
+		A string `vx:"minLength=0"`
+		B string `vx:"minLength=ab"`
+	}
+
+	type ruleRequired struct {
+		A string `vx:"required"`
 	}
 
 	type structAnyTagInt struct {
-		age interface{} `vx:"type=int"`
+		Age interface{} `vx:"type=int"`
 	}
 
 	type want struct {
@@ -51,93 +55,105 @@ func TestValidateStruct(t *testing.T) {
 		{
 			name: "noTag",
 			arg: noTag{
-				a: "vx",
+				A: "vx",
 			},
 			want: want{true, 0},
 		},
 		{
 			name: "emptyTag",
 			arg: emptyTag{
-				a: "vx",
+				A: "vx",
 			},
 			want: want{true, 0},
 		},
 		{
 			name: "rule: minLength of 5 is failed",
 			arg: ruleMinLength5{
-				a: "yolo",
+				A: "yolo",
 			},
 			want: want{true, 1},
 		},
 		{
 			name: "rule: minLength of 5 is passed",
 			arg: ruleMinLength5{
-				a: "happy",
+				A: "happy",
 			},
 			want: want{true, 0},
 		},
 		{
 			name: "rule: minLength of 0 should throw an internal error",
 			arg: ruleMinLength0{
-				a: "happy",
+				A: "happy",
 			},
 			want: want{false, 1},
 		},
 		{
 			name: "rule: minLength of 3 with field of type any with string value should fail",
 			arg: ruleMinLength3WithAny{
-				a: "ab",
+				A: "ab",
 			},
 			want: want{true, 1},
 		},
 		{
 			name: "rule: minLength of 3 with field of type any with int value should fail",
 			arg: ruleMinLength3WithAny{
-				a: 12,
+				A: 12,
 			},
 			want: want{true, 1},
 		},
 		{
 			name: "rule: minLength of 3 with field of type any with string value should pass",
 			arg: ruleMinLength3WithAny{
-				a: "abcd",
+				A: "abcd",
 			},
 			want: want{true, 0},
 		},
 		{
-			name: "rule: minLength of 3 with field of type any with int value should pass",
+			name: "rule: minLength of 3 with field of type any with int value should fail",
 			arg: ruleMinLength3WithAny{
-				a: 1234,
+				A: 1234,
 			},
-			want: want{true, 0},
+			want: want{true, 1},
 		},
 		{
-			name: "rule: minLength of 3 with field of type any with bool value should pass",
+			name: "rule: minLength of 3 with field of type any with bool value should fail",
 			arg: ruleMinLength3WithAny{
-				a: false,
+				A: false,
 			},
-			want: want{true, 0},
+			want: want{true, 1},
 		},
 		{
 			name: "rule: minLength of 3 with with int value should fail",
 			arg: ruleMinLength3WithInt{
-				a: 1234,
+				Lmao: 1234,
 			},
-			want: want{false, 1},
+			want: want{true, 1},
 		},
 		{
 			name: "rule: minlength should return internal error for both fields",
 			arg: twoStringFields{
-				a: "ab",
-				b: "abc",
+				A: "ab",
+				B: "abc",
 			},
 			want: want{false, 2},
 		},
 		{
 			name: "type expected to be int error",
 			arg: structAnyTagInt{
-				age: "abc",
+				Age: "abc",
 			},
+			want: want{true, 1},
+		},
+		{
+			name: "rule: required should fail because string is empty",
+			arg: ruleRequired{
+				A: "",
+			},
+			want: want{true, 1},
+		},
+		{
+			name: "rule: required should fail because field is nil",
+			arg:  ruleRequired{},
 			want: want{true, 1},
 		},
 	}
