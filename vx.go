@@ -76,7 +76,7 @@ func ValidateStruct(v any) (VxResult, bool) {
 		// field.Value to be a default of the type that was being expected. If the
 		// expected type is any, we will default it to empty string.
 		if field.Value == nil {
-			fmt.Printf("YIKES! rhis is bad, %s is nil which can be a nasty runtime error.", field.Name)
+			fmt.Printf("YIKES! This is bad, %s is nil which can be a nasty runtime error.", field.Name)
 		}
 
 	}
