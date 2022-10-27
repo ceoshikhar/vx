@@ -172,9 +172,9 @@ func TestValidateStruct(t *testing.T) {
 				t.Errorf("expected ok to be %v but got %v, check the errors above", test.want.ok, ok)
 			}
 
-			if len(res.errors) != test.want.count {
+			if len(res.Errors) != test.want.count {
 				t.Error(res.Error())
-				t.Errorf("expected to get exactly %v number of validation errors but got %v, check the errors above.", test.want.count, len(res.errors))
+				t.Errorf("expected to get exactly %v number of validation errors but got %v, check the errors above.", test.want.count, len(res.Errors))
 			}
 		})
 	}
