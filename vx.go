@@ -40,7 +40,7 @@ func ValidateStruct(v any) (VxError, bool) {
 	}
 
 	// FIXME: Making these maps might not be the best way to do this.
-	fieldMap := map[string]internal.StructField{}
+	fieldMap := map[string]internal.VxField{}
 	tagMap := map[string]internal.Tag{}
 
 	// NOTE: do not return if `MakeTag` fails for a field. We want to collect
@@ -112,7 +112,7 @@ func ValidateStruct(v any) (VxError, bool) {
 		}
 	}
 
-	// fmt.Println(v, parsedStruct, vxErr)
+	// fmt.Println("ParsedStruct:", parsedStruct)
 	// fmt.Println("Result:", ok, vxErr)
 
 	return vxErr, ok

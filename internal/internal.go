@@ -22,7 +22,7 @@ type Tag struct {
 	Rules []rule
 }
 
-func MakeTag(field StructField) (Tag, error) {
+func MakeTag(field VxField) (Tag, error) {
 	tag := Tag{
 		Rules: []rule{},
 	}
@@ -56,22 +56,29 @@ func MakeTag(field StructField) (Tag, error) {
 	return tag, nil
 }
 
-type StructField struct {
+type VxField struct {
 	// Name of the field.
 	Name string
 	// Type of the field.
 	Type reflect.Type
-	// The `VX_TAG` tag on the field.
+	// The `"vx"` tag on the field.
 	Tag string
 	// Value of this field.
 	Value any
+	// Type of the value given to this field.
+	//
+	// VxStruct.ValueType will be different than VxField.Type when:
+	// - VxField.Type is reflect.Interface then VxStruct.ValueType will be the
+	//   type of the value that is actually passed to this field.
+	// - If the struct was created during runtime via something like json.Encode, etc.
+	ValueType reflect.Type
 }
 
 type VxStruct struct {
 	// Name of the struct.
 	Name string
 	// Fields in the struct.
-	Fields []StructField
+	Fields []VxField
 }
 
 func ParseStruct(toParse interface{}) (VxStruct, error) {
@@ -90,7 +97,7 @@ func ParseStruct(toParse interface{}) (VxStruct, error) {
 	}
 
 	valType := val.Type()
-	fields := []StructField{}
+	fields := []VxField{}
 
 	for i := 0; i < valType.NumField(); i++ {
 		field := valType.Field(i)
@@ -98,9 +105,10 @@ func ParseStruct(toParse interface{}) (VxStruct, error) {
 		Name := field.Name
 		Type := field.Type
 		Tag := field.Tag.Get(VX_TAG_KEY)
-		Value := reflect.Indirect(reflect.ValueOf(toParse)).FieldByName(field.Name).Interface()
+		Value := reflect.Indirect(reflect.ValueOf(toParse)).FieldByName(Name).Interface()
+		ValueType := reflect.TypeOf(Value)
 
-		fields = append(fields, StructField{Name, Type, Tag, Value})
+		fields = append(fields, VxField{Name, Type, Tag, Value, ValueType})
 	}
 
 	return VxStruct{
@@ -111,7 +119,7 @@ func ParseStruct(toParse interface{}) (VxStruct, error) {
 
 // This interface should be implemented by everything but "type" in the "vx" tag.
 type rule interface {
-	Exec(field StructField) error
+	Exec(field VxField) error
 }
 
 //
@@ -124,7 +132,7 @@ func makeRequired() required {
 	return required{}
 }
 
-func (r required) Exec(field StructField) error {
+func (r required) Exec(field VxField) error {
 	if field.Value == nil || field.Value == "" {
 		return fmt.Errorf("%s is required", field.Name)
 	}
@@ -144,7 +152,7 @@ func makeMinLength(l int) minLength {
 	return minLength{l}
 }
 
-func (r minLength) Exec(field StructField) error {
+func (r minLength) Exec(field VxField) error {
 	wrongTypeErr := fmt.Errorf("%s - minLength: rule can be applied to type string or any but got %s", field.Name, TypeOf(field.Value))
 
 	if field.Type.Kind() != reflect.String && field.Type.Kind() != reflect.Interface {

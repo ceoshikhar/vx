@@ -22,7 +22,7 @@ func TestValidateStruct(t *testing.T) {
 	}
 
 	type ruleMinLength3WithAny struct {
-		A interface{} `vx:"minLength=3"`
+		A any `vx:"minLength=3"`
 	}
 
 	type ruleMinLength3WithInt struct {
@@ -176,7 +176,6 @@ func TestValidateStruct(t *testing.T) {
 				t.Error(res.Error())
 				t.Errorf("expected to get exactly %v number of validation errors but got %v, check the errors above.", test.want.count, len(res.errors))
 			}
-
 		})
 	}
 }
