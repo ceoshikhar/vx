@@ -38,10 +38,6 @@ func TestValidateStruct(t *testing.T) {
 		A any `vx:"required"`
 	}
 
-	type structAnyTagInt struct {
-		Age interface{} `vx:"type=int"`
-	}
-
 	type want struct {
 		ok    bool
 		count int
@@ -136,13 +132,6 @@ func TestValidateStruct(t *testing.T) {
 				B: "abc",
 			},
 			want: want{false, 2},
-		},
-		{
-			name: "type expected to be int error",
-			arg: structAnyTagInt{
-				Age: "abc",
-			},
-			want: want{true, 1},
 		},
 		{
 			name: "rule: required should fail because string is empty",
