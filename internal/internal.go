@@ -28,6 +28,7 @@ const (
 	TYPE_INTERFACE   VxType = "interface {}"   // any
 	TYPE_INT         VxType = "int"
 	TYPE_STRING      VxType = "string"
+	TYPE_MAP         VxType = "map"
 )
 
 func MakeVxType(s string) VxType {
@@ -38,6 +39,8 @@ func MakeVxType(s string) VxType {
 		return TYPE_STRING
 	case "interface {}":
 		return TYPE_INTERFACE
+	case "map":
+		return TYPE_MAP
 	case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "float32", "float64", "complex64", "complex128", "float", "uint", "uintptr", "byte", "rune":
 		{
 			log.Printf("Got a type '%s' that is currently unsupported", s)
@@ -59,6 +62,8 @@ func MakeVxTypeFromKind(t reflect.Kind) VxType {
 		return TYPE_STRING
 	case reflect.Interface:
 		return TYPE_INTERFACE
+	case reflect.Map:
+		return TYPE_MAP
 	// case "bool", uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "float32", "float64", "complex64", "complex128", "float", "uint", "uintptr", "byte", "rune":
 	default:
 		{
