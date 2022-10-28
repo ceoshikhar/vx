@@ -7,9 +7,15 @@ import (
 	"vx"
 )
 
+type AssocFilter map[string]interface{}
+
+type BonusFilter map[string]interface{}
+
 type user struct {
-	Name string      `json:"name" vx:"name=name, required"`
-	Age  interface{} `json:"age" vx:"name=age, type=int, required"`
+	Name  string      `vx:"name=name, required"`
+	Age   interface{} `vx:"name=age, type=int, required"`
+	Assoc AssocFilter
+	Bonus BonusFilter
 }
 
 func test(w http.ResponseWriter, req *http.Request) {
@@ -38,6 +44,6 @@ func test(w http.ResponseWriter, req *http.Request) {
 
 func main() {
 	http.HandleFunc("/test", test)
-
+	fmt.Println("Server listening on port 8080")
 	http.ListenAndServe(":8080", nil)
 }
