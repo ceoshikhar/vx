@@ -11,7 +11,7 @@ type VxResult struct {
 	Errors []error
 }
 
-func (v VxResult) Error() string {
+func (v VxResult) String() string {
 	var sb strings.Builder
 
 	for _, err := range v.Errors {
@@ -26,17 +26,17 @@ func ValidateStruct(v any) (VxResult, bool) {
 	// If ok is false that means the error was caused due to something else other
 	// than validating the struct. Something went wrong before the validation.
 	ok := true
-	vxErr := VxResult{
+	res := VxResult{
 		Errors: []error{},
 	}
 
 	parsedStruct, err := internal.ParseStruct(v)
 	if err != nil {
-		vxErr.Errors = append(vxErr.Errors, err)
+		res.Errors = append(res.Errors, err)
 		ok = false
 		// This is the only case where we early return because if this fails
 		// there is literally nothing more we can do after this.
-		return vxErr, ok
+		return res, ok
 	}
 
 	// FIXME: Making these maps might not be the best way to do this.
@@ -49,7 +49,7 @@ func ValidateStruct(v any) (VxResult, bool) {
 		tag, err := internal.MakeTag(field)
 		if err != nil {
 			ok = false
-			vxErr.Errors = append(vxErr.Errors, err)
+			res.Errors = append(res.Errors, err)
 		}
 
 		tagMap[field.Name] = tag
@@ -59,12 +59,12 @@ func ValidateStruct(v any) (VxResult, bool) {
 	// We have an internal error, so we are not going to return them without
 	// executing rules on the parsedStruct's `Fields`.
 	if !ok {
-		return vxErr, ok
+		return res, ok
 	}
 
 	for _, field := range parsedStruct.Fields {
 		if field.Type != field.ValueType && field.Type.Kind() != reflect.Interface {
-			vxErr.Errors = append(vxErr.Errors, fmt.Errorf("%s should be of type %s", field.Name, field.Type))
+			res.Errors = append(res.Errors, fmt.Errorf("%s should be of type %s", field.Name, field.Type))
 		}
 
 		// This is a bit tricky. Although we have a "required" Rule to check and warn
@@ -84,9 +84,9 @@ func ValidateStruct(v any) (VxResult, bool) {
 	// If we have collected some errors and have reached here that means these
 	// errors are due to the fact that some field(s) type casting failed.
 	// We don't execute Rules and return here with type casting errors.
-	if len(vxErr.Errors) > 0 {
+	if len(res.Errors) > 0 {
 		ok = true
-		return vxErr, ok
+		return res, ok
 	}
 
 	for fieldName, tag := range tagMap {
@@ -95,13 +95,13 @@ func ValidateStruct(v any) (VxResult, bool) {
 		for _, rule := range tag.Rules {
 			err := rule.Exec(field)
 			if err != nil {
-				vxErr.Errors = append(vxErr.Errors, err)
+				res.Errors = append(res.Errors, err)
 			}
 		}
 	}
 
 	fmt.Println("\nParsedStruct:", parsedStruct)
-	fmt.Println("\nResult:", ok, vxErr)
+	fmt.Println("\nResult:", ok, res)
 
-	return vxErr, ok
+	return res, ok
 }

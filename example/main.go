@@ -24,12 +24,12 @@ func test(w http.ResponseWriter, req *http.Request) {
 	res, ok := vx.ValidateStruct(u)
 
 	if !ok {
-		http.Error(w, res.Error(), http.StatusInternalServerError)
+		http.Error(w, res.String(), http.StatusInternalServerError)
 		return
 	}
 
 	if len(res.Errors) > 0 {
-		http.Error(w, res.Error(), http.StatusBadRequest)
+		http.Error(w, res.String(), http.StatusBadRequest)
 		return
 	}
 
