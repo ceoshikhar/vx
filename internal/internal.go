@@ -101,7 +101,6 @@ func MakeTag(field VxField) (Tag, error) {
 	}
 
 	if tag.Type != MakeVxTypeFromKind(field.Type.Kind()) && MakeVxTypeFromKind(field.Type.Kind()) != TYPE_INTERFACE {
-		fmt.Println(tag.Type, field.Type.Kind(), MakeVxTypeFromKind(field.Type.Kind()))
 		err := fmt.Errorf("type mismatch: %s type in struct is '%s' and in tag is '%s'", field.Name, field.Type, tag.Type)
 		return tag, err
 	}
