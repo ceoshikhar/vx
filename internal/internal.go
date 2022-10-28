@@ -3,6 +3,7 @@ package internal
 import (
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -39,12 +40,12 @@ func MakeVxType(s string) VxType {
 		return TYPE_INTERFACE
 	case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "float32", "float64", "complex64", "complex128", "float", "uint", "uintptr", "byte", "rune":
 		{
-			fmt.Println("MakeVxType: got unsupported type:", s)
+			log.Printf("Got a type '%s' that is currently unsupported", s)
 			return TYPE_UNSUPPORTED
 		}
 	default:
 		{
-			fmt.Println("couldn't figure out VxType from the string:", s)
+			log.Printf("Coudn't figure out the type for '%s'", s)
 			return TYPE_UNKNOWN
 		}
 	}
@@ -52,7 +53,7 @@ func MakeVxType(s string) VxType {
 
 func MakeVxTypeFromKind(t reflect.Kind) VxType {
 	switch t {
-	case reflect.Float64:
+	case reflect.Int, reflect.Float64:
 		return TYPE_INT
 	case reflect.String:
 		return TYPE_STRING
@@ -61,6 +62,7 @@ func MakeVxTypeFromKind(t reflect.Kind) VxType {
 	// case "bool", uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "float32", "float64", "complex64", "complex128", "float", "uint", "uintptr", "byte", "rune":
 	default:
 		{
+			log.Printf("Got a type '%s' that is currently unsupported", t.String())
 			return TYPE_UNSUPPORTED
 		}
 	}
@@ -94,6 +96,7 @@ func MakeTag(field VxField) (Tag, error) {
 	}
 
 	if tag.Type != MakeVxTypeFromKind(field.Type.Kind()) && MakeVxTypeFromKind(field.Type.Kind()) != TYPE_INTERFACE {
+		fmt.Println(tag.Type, field.Type.Kind(), MakeVxTypeFromKind(field.Type.Kind()))
 		err := fmt.Errorf("type mismatch: %s type in struct is '%s' and in tag is '%s'", field.Name, field.Type, tag.Type)
 		return tag, err
 	}
