@@ -8,8 +8,8 @@ import (
 )
 
 type user struct {
-	Name string      `json:"name" vx:"required"`
-	Age  interface{} `json:"age" vx:"type=int, required"`
+	Name string      `json:"name" vx:"name=name, required"`
+	Age  interface{} `json:"age" vx:"name=age, type=int, required"`
 }
 
 func test(w http.ResponseWriter, req *http.Request) {

@@ -86,7 +86,6 @@ func MakeTag(field VxField) (Tag, error) {
 		if strings.Contains(split, "type") {
 			tag.Type = MakeVxType(strings.Split(split, "=")[1])
 		}
-
 	}
 
 	// No explicit `type` was provided in the tag.
@@ -183,7 +182,20 @@ func ParseStruct(toParse interface{}) (VxStruct, error) {
 		Name := field.Name
 		Type := field.Type
 		Tag := field.Tag.Get(VX_TAG_KEY)
-		Value := reflect.Indirect(reflect.ValueOf(toParse)).FieldByName(Name).Interface()
+
+		splits := strings.Split(Tag, ",")
+		for _, split := range splits {
+			if strings.Contains(split, "name") {
+				v := strings.Split(split, "=")[1]
+
+				if len(v) > 0 {
+					// We have a `name` property on the tag, so lets use it.
+					Name = v
+				}
+			}
+		}
+
+		Value := reflect.Indirect(reflect.ValueOf(toParse)).FieldByName(field.Name).Interface()
 		ValueType := reflect.TypeOf(Value)
 
 		fields = append(fields, VxField{Name, Type, Tag, Value, ValueType})

@@ -22,11 +22,17 @@ func (v VxResult) String() string {
 	return sb.String()
 }
 
-func ValidateStruct(v any) (VxResult, bool) {
-	// If ok is false that means the error was caused due to something else other
-	// than validating the struct. Something went wrong before the validation.
-	ok := true
-	res := VxResult{
+// Parses and validates all the field's values of the given struct `v` against
+// the rules mentioned in the "vx" tag.
+//
+// Returns (res VxResult, ok bool) where `res` is the result with `res.Errors`
+// containing all the errors that happened during the entire functional call
+// and `ok` represents whether the `res.Errors` were generated due to something
+// else other than the actual validation. Something went wrong before the
+// validation, maybe the parsing of the struct caused an error, etc.
+func ValidateStruct(v any) (res VxResult, ok bool) {
+	ok = true
+	res = VxResult{
 		Errors: []error{},
 	}
 
