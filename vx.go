@@ -78,7 +78,7 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 		// forgets to add the "required" Rule and then reads this field, that would
 		// lead to a panic during runtime, which is NOT SO GOOD !!
 		//
-		// So in order to prevent the runtime panics for Vx users, we will set the
+		// So in order to prevent the runtime panics for Vx users, we should set the
 		// field.Value to be a default of the type that was being expected. If the
 		// expected type is any, we will default it to empty string.
 		if field.Value == nil {
