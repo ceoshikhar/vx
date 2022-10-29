@@ -205,7 +205,24 @@ func ParseStruct(toParse interface{}) (VxStruct, error) {
 		Value := reflect.Indirect(reflect.ValueOf(toParse)).FieldByName(field.Name).Interface()
 		ValueType := reflect.TypeOf(Value)
 
+		// Checking if we have a Type on a Field which is another custom `type`(Go keyword).
+		if strings.Contains(Type.String(), "main") && strings.Contains(ValueType.String(), "main") {
+			fmt.Println("Field with a Type that is of another type:", Type)
+
+			// Switching over the actual `type`.
+			switch Type.Kind() {
+			case reflect.Map:
+				{
+					fmt.Println(Type, Type.Key(), Type.Elem())
+				}
+
 			default:
+				{
+					// Nothing to do here.
+				}
+			}
+		}
+
 		fields = append(fields, VxField{Name, Type, Tag, Value, ValueType})
 	}
 
