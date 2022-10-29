@@ -75,8 +75,17 @@ func MakeTag(field VxField) (VxTag, error) {
 	// loop twice over `splits` but maybe consider not looping twice?
 	for _, split := range splits {
 		if strings.Contains(split, "type") {
-			tag.Kind = stringToKind(strings.Split(split, "=")[1])
+			typeStr := strings.Split(split, "=")[1]
+			tagKind := stringToKind(typeStr)
+
+			if tagKind == reflect.Invalid {
+				err := fmt.Errorf("%s has an invalid/unsupported type '%s' in tag", field.Name, typeStr)
+				return tag, err
+			}
+
+			tag.Kind = tagKind
 		}
+
 	}
 
 	// No explicit `type` was provided in the tag.
