@@ -29,7 +29,7 @@ func (v VxResult) String() string {
 // containing all the errors that happened during the entire functional call
 // and `ok` represents whether the `res.Errors` were generated due to something
 // else other than the actual validation. Something went wrong before the
-// validation, maybe the parsing of the struct caused an error, etc.
+// validation, like the parsing of the struct or making `Tag`.
 func ValidateStruct(v any) (res VxResult, ok bool) {
 	ok = true
 	res = VxResult{
