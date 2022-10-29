@@ -47,7 +47,7 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 
 	// FIXME: Making these maps might not be the best way to do this.
 	fieldMap := map[string]internal.VxField{}
-	tagMap := map[string]internal.Tag{}
+	tagMap := map[string]internal.VxTag{}
 
 	// NOTE: do not return if `MakeTag` fails for a field. We want to collect
 	// all the errors for all fields first and then return them at the end.

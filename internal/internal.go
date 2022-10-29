@@ -73,13 +73,13 @@ func MakeVxTypeFromKind(t reflect.Kind) VxType {
 	}
 }
 
-type Tag struct {
+type VxTag struct {
 	Type  VxType
 	Rules []rule
 }
 
-func MakeTag(field VxField) (Tag, error) {
-	tag := Tag{
+func MakeTag(field VxField) (VxTag, error) {
+	tag := VxTag{
 		Type:  TYPE_EMPTY,
 		Rules: []rule{},
 	}
@@ -205,6 +205,7 @@ func ParseStruct(toParse interface{}) (VxStruct, error) {
 		Value := reflect.Indirect(reflect.ValueOf(toParse)).FieldByName(field.Name).Interface()
 		ValueType := reflect.TypeOf(Value)
 
+			default:
 		fields = append(fields, VxField{Name, Type, Tag, Value, ValueType})
 	}
 
