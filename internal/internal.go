@@ -3,7 +3,6 @@ package internal
 import (
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -19,68 +18,53 @@ const (
 	VX_TAG_KEY = "vx"
 )
 
-type VxType string
-
-const (
-	TYPE_EMPTY       VxType = "vx_empty"       // No "type" was explicity declared in the vx tag.
-	TYPE_UNKNOWN     VxType = "vx_unknown"     // We do not understand the underlying type.
-	TYPE_UNSUPPORTED VxType = "vx_unsupported" // We understand the underlying type but don't support it yet.
-	TYPE_INTERFACE   VxType = "interface {}"   // any
-	TYPE_INT         VxType = "int"
-	TYPE_STRING      VxType = "string"
-	TYPE_MAP         VxType = "map"
-)
-
-func MakeVxType(s string) VxType {
-	switch s {
-	case "int":
-		return TYPE_INT
-	case "string":
-		return TYPE_STRING
-	case "interface {}":
-		return TYPE_INTERFACE
-	case "map":
-		return TYPE_MAP
-	case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "float32", "float64", "complex64", "complex128", "float", "uint", "uintptr", "byte", "rune":
-		{
-			log.Printf("Got a type '%s' that is currently unsupported", s)
-			return TYPE_UNSUPPORTED
-		}
-	default:
-		{
-			log.Printf("Coudn't figure out the type for '%s'", s)
-			return TYPE_UNKNOWN
-		}
-	}
+var typeToKind = map[string]reflect.Kind{
+	"bool":           reflect.Bool,
+	"int":            reflect.Int,
+	"int8":           reflect.Int8,
+	"int16":          reflect.Int16,
+	"int32":          reflect.Int32,
+	"int64":          reflect.Int64,
+	"uint":           reflect.Uint,
+	"uint8":          reflect.Uint8,
+	"uint16":         reflect.Uint16,
+	"uint32":         reflect.Uint32,
+	"uint64":         reflect.Uint64,
+	"uintptr":        reflect.Uintptr,
+	"float32":        reflect.Float32,
+	"float64":        reflect.Float64,
+	"complex64":      reflect.Complex64,
+	"complex128":     reflect.Complex128,
+	"array":          reflect.Array,
+	"chan":           reflect.Chan,
+	"func":           reflect.Func,
+	"interface":      reflect.Interface,
+	"map":            reflect.Map,
+	"ptr":            reflect.Ptr,
+	"slice":          reflect.Slice,
+	"string":         reflect.String,
+	"struct":         reflect.Struct,
+	"unsafe.Pointer": reflect.UnsafePointer,
 }
 
-func MakeVxTypeFromKind(t reflect.Kind) VxType {
-	switch t {
-	case reflect.Int, reflect.Float64:
-		return TYPE_INT
-	case reflect.String:
-		return TYPE_STRING
-	case reflect.Interface:
-		return TYPE_INTERFACE
-	case reflect.Map:
-		return TYPE_MAP
-	// case "bool", uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "float32", "float64", "complex64", "complex128", "float", "uint", "uintptr", "byte", "rune":
-	default:
-		{
-			log.Printf("Got a type '%s' that is currently unsupported", t.String())
-			return TYPE_UNSUPPORTED
-		}
+func stringToKind(s string) reflect.Kind {
+	kind, ok := typeToKind[s]
+
+	if !ok {
+		kind = reflect.Invalid
 	}
+
+	return kind
 }
 
 type VxTag struct {
-	Type  VxType
+	Kind  reflect.Kind
 	Rules []rule
 }
 
 func MakeTag(field VxField) (VxTag, error) {
 	tag := VxTag{
-		Type:  TYPE_EMPTY,
+		Kind:  reflect.Invalid,
 		Rules: []rule{},
 	}
 
@@ -91,24 +75,24 @@ func MakeTag(field VxField) (VxTag, error) {
 	// loop twice over `splits` but maybe consider not looping twice?
 	for _, split := range splits {
 		if strings.Contains(split, "type") {
-			tag.Type = MakeVxType(strings.Split(split, "=")[1])
+			tag.Kind = stringToKind(strings.Split(split, "=")[1])
 		}
 	}
 
 	// No explicit `type` was provided in the tag.
-	if tag.Type == TYPE_EMPTY {
-		tag.Type = MakeVxTypeFromKind(field.Type.Kind())
+	if tag.Kind == reflect.Invalid {
+		tag.Kind = field.Type.Kind()
 	}
 
-	if tag.Type != MakeVxTypeFromKind(field.Type.Kind()) && MakeVxTypeFromKind(field.Type.Kind()) != TYPE_INTERFACE {
-		err := fmt.Errorf("type mismatch: %s type in struct is '%s' and in tag is '%s'", field.Name, field.Type, tag.Type)
+	if tag.Kind != field.Type.Kind() && field.Type.Kind() != reflect.Interface {
+		err := fmt.Errorf("type mismatch: %s type in struct is '%s' and in tag is '%s'", field.Name, field.Type, tag.Kind)
 		return tag, err
 	}
 
 	// NOTE: `field.ValueType.Kind()` panics when `field.Value` is `nil` !!!
 	if field.Value != nil {
-		if tag.Type != MakeVxTypeFromKind(field.ValueType.Kind()) && tag.Type != TYPE_INTERFACE {
-			err := fmt.Errorf("%s should be of type %s but got %s", field.Name, tag.Type, MakeVxTypeFromKind(field.ValueType.Kind()))
+		if tag.Kind != field.ValueType.Kind() && field.Type.Kind() != reflect.Interface {
+			err := fmt.Errorf("%s should be of type %s but got %s", field.Name, tag.Kind, field.ValueType.Kind())
 			return tag, err
 		}
 	}
