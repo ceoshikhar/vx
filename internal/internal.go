@@ -3,6 +3,7 @@ package internal
 import (
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -22,7 +23,7 @@ func makeType(s string) (reflect.Type, error) {
 	var typ reflect.Type
 
 	if s == "any" || s == "interface{}" {
-		return typ, errors.New("cannot make a Type for any, please use a type from the following: bool, int, float64, string")
+		return typ, fmt.Errorf("unsupported type '%s' in tag. supported types are bool, int, float64, string", s)
 	} else if s == "bool" {
 		typ = reflect.TypeOf(bool(true))
 	} else if s == "int" {
@@ -44,14 +45,14 @@ func makeType(s string) (reflect.Type, error) {
 
 		keyType, err := makeType(keyStr)
 		if err != nil {
-			return typ, fmt.Errorf("couldn't make a Type for the key '%s' of the map '%s'", keyStr, s)
+			return typ, fmt.Errorf("couldn't make a Type for the key '%s' of the map '%s'. %s", keyStr, s, err.Error())
 		}
 
 		elemStr := s[rightIdx+1:]
 
 		elemType, err := makeType(elemStr)
 		if err != nil {
-			return typ, fmt.Errorf("couldn't make a Type for the elem '%s' of the map '%s'", elemStr, s)
+			return typ, fmt.Errorf("couldn't make a Type for the elem '%s' of the map '%s'. %s", elemStr, s, err.Error())
 		}
 
 		typ = reflect.MapOf(keyType, elemType)
@@ -61,7 +62,7 @@ func makeType(s string) (reflect.Type, error) {
 
 		sliceType, err := makeType(sliceTypeStr)
 		if err != nil {
-			return typ, fmt.Errorf("couldn't make a Type for the elem '%s' of the slice '%s'", sliceTypeStr, s)
+			return typ, fmt.Errorf("couldn't make a Type for the elem '%s' of the slice '%s'. %s", sliceTypeStr, s, err.Error())
 		}
 
 		typ = reflect.SliceOf(sliceType)
@@ -85,7 +86,7 @@ func makeType(s string) (reflect.Type, error) {
 
 		elemType, err := makeType(elemStr)
 		if err != nil {
-			return typ, fmt.Errorf("couldn't make a Type for the elem '%s' of the array '%s'", elemStr, s)
+			return typ, fmt.Errorf("couldn't make a Type for the elem '%s' of the array '%s'. %s", elemStr, s, err.Error())
 		}
 
 		typ = reflect.ArrayOf(arrayLen, elemType)
@@ -115,11 +116,12 @@ func MakeTag(field VxField) (VxTag, error) {
 	// PERFORMANCE: technicallly the time complexity remains O(n) even if we
 	// loop twice over `splits` but maybe consider not looping twice?
 	for _, split := range splits {
-		if strings.Contains(split, "type") {
+		if strings.Contains(split, "type=") {
 			typeStr := strings.Split(split, "=")[1]
 
 			tagType, err := makeType(typeStr)
 			if err != nil {
+				err := fmt.Errorf("%s: %s", field.Name, err.Error())
 				return tag, err
 			}
 
@@ -139,7 +141,9 @@ func MakeTag(field VxField) (VxTag, error) {
 
 	// Looping second time to build rules.
 	for _, split := range splits {
-		if strings.Contains(split, "minLength") {
+		if strings.Contains(split, "type=") || strings.Contains(split, "name=") {
+			// We have already handled these.
+		} else if strings.Contains(split, "minLength=") {
 			v := strings.Split(split, "=")[1]
 
 			i, err := strconv.Atoi(v)
@@ -153,11 +157,11 @@ func MakeTag(field VxField) (VxTag, error) {
 
 			rule := makeMinLength(i)
 			tag.Rules = append(tag.Rules, rule)
-		}
-
-		if strings.Contains(split, "required") {
+		} else if strings.Contains(split, "required") {
 			rule := makeRequired()
 			tag.Rules = append(tag.Rules, rule)
+		} else {
+			log.Println("got an invalid value in the tag: ", split)
 		}
 	}
 
@@ -216,7 +220,7 @@ func ParseStruct(toParse interface{}) (VxStruct, error) {
 
 		splits := strings.Split(Tag, ",")
 		for _, split := range splits {
-			if strings.Contains(split, "name") {
+			if strings.Contains(split, "name=") {
 				v := strings.Split(split, "=")[1]
 
 				if len(v) > 0 {
