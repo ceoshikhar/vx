@@ -73,6 +73,11 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 		if field.Value != nil {
 			tag := tagMap[field.Name]
 
+			// FIXME: Maybe we should have early checks to decide to "continue",
+			// if we happen to reach the end, we return the error for wrong type.
+			// Because for slices, array and map, we need to figure out and
+			// the type for `key` and `elem` and compare them to `tag.Type`.
+
 			if tag.Type != field.ValueType && field.Type.Kind() == reflect.Interface && tag.HasExplicitType && tag.Type.Kind() != reflect.Interface {
 				err := fmt.Errorf("%s should be of type %s but got %s", field.Name, tag.Type, field.ValueType)
 				res.Errors = append(res.Errors, err)
