@@ -21,7 +21,9 @@ const (
 func makeType(s string) (reflect.Type, error) {
 	var typ reflect.Type
 
-	if s == "bool" {
+	if s == "any" || s == "interface{}" {
+		return typ, errors.New("cannot make a Type for any, please use a type from the following: bool, int, float64, string")
+	} else if s == "bool" {
 		typ = reflect.TypeOf(bool(true))
 	} else if s == "int" {
 		typ = reflect.TypeOf(int(0))
