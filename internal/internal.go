@@ -23,7 +23,7 @@ func makeType(s string) (reflect.Type, error) {
 	var typ reflect.Type
 
 	if s == "any" || s == "interface{}" {
-		return typ, fmt.Errorf("unsupported type '%s' in tag. supported types are bool, int, float64, string", s)
+		return typ, fmt.Errorf("'%s' is currently unsupported. supported types are bool, int, float64, string", s)
 	} else if s == "bool" {
 		typ = reflect.TypeOf(bool(true))
 	} else if s == "int" {
@@ -45,14 +45,14 @@ func makeType(s string) (reflect.Type, error) {
 
 		keyType, err := makeType(keyStr)
 		if err != nil {
-			return typ, fmt.Errorf("couldn't make a Type for the key '%s' of the map '%s'. %s", keyStr, s, err.Error())
+			return typ, fmt.Errorf("couldn't make a type for the key '%s' of the map '%s'. %s", keyStr, s, err.Error())
 		}
 
 		elemStr := s[rightIdx+1:]
 
 		elemType, err := makeType(elemStr)
 		if err != nil {
-			return typ, fmt.Errorf("couldn't make a Type for the elem '%s' of the map '%s'. %s", elemStr, s, err.Error())
+			return typ, fmt.Errorf("couldn't make a type for the elem '%s' of the map '%s'. %s", elemStr, s, err.Error())
 		}
 
 		typ = reflect.MapOf(keyType, elemType)
@@ -62,7 +62,7 @@ func makeType(s string) (reflect.Type, error) {
 
 		sliceType, err := makeType(sliceTypeStr)
 		if err != nil {
-			return typ, fmt.Errorf("couldn't make a Type for the elem '%s' of the slice '%s'. %s", sliceTypeStr, s, err.Error())
+			return typ, fmt.Errorf("couldn't make a type for the elem '%s' of the slice '%s'. %s", sliceTypeStr, s, err.Error())
 		}
 
 		typ = reflect.SliceOf(sliceType)
@@ -86,12 +86,12 @@ func makeType(s string) (reflect.Type, error) {
 
 		elemType, err := makeType(elemStr)
 		if err != nil {
-			return typ, fmt.Errorf("couldn't make a Type for the elem '%s' of the array '%s'. %s", elemStr, s, err.Error())
+			return typ, fmt.Errorf("couldn't make a type for the elem '%s' of the array '%s'. %s", elemStr, s, err.Error())
 		}
 
 		typ = reflect.ArrayOf(arrayLen, elemType)
 	} else {
-		return typ, fmt.Errorf("cannot make a Type for '%s'", s)
+		return typ, fmt.Errorf("cannot make a type for '%s'. it's either invalid or unsupported", s)
 	}
 
 	return typ, nil
@@ -235,7 +235,7 @@ func ParseStruct(toParse interface{}) (VxStruct, error) {
 
 		// Checking if we have a Type on a Field which is another custom `type`(Go keyword).
 		if strings.Contains(Type.String(), "main") && strings.Contains(ValueType.String(), "main") {
-			fmt.Println("Field with a Type that is of another type:", Type)
+			fmt.Println("Field with a type that is of another type:", Type)
 
 			// Switching over the actual `type`.
 			switch Type.Kind() {
