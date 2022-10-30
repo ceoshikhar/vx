@@ -23,7 +23,20 @@ func makeType(s string) (reflect.Type, error) {
 	var typ reflect.Type
 
 	if s == "any" || s == "interface{}" {
-		return typ, fmt.Errorf("'%s' is currently unsupported. supported types are bool, int, float64, string", s)
+		// Idk how to create a reflect.Type for interface{} except this
+		// making a struct with a field of type inteface{} and then use
+		// the field's type.
+		type a struct {
+			A any
+		}
+
+		toParse := a{A: "any value here will work ;)"}
+		fields, err := ParseStruct(toParse)
+		if err != nil {
+			return typ, fmt.Errorf("failed to make type for %s", s)
+		}
+
+		typ = fields.Fields[0].Type
 	} else if s == "bool" {
 		typ = reflect.TypeOf(bool(true))
 	} else if s == "int" {

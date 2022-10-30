@@ -62,6 +62,10 @@ func TestTypeInTag(t *testing.T) {
 		A any `vx:"type=map[string]string"`
 	}
 
+	type anyToAny struct {
+		A any `vx:"type=any"`
+	}
+
 	tests := []validateStructTest{
 		{
 			name: "anyToBool with bool value should not give an error",
@@ -109,6 +113,13 @@ func TestTypeInTag(t *testing.T) {
 			name: "anyToMap with map[string]string{} value should not give an error",
 			arg: anyToMap{
 				A: map[string]string{},
+			},
+			want: want{true, 0},
+		},
+		{
+			name: "anyToAny with []string{} value should not give an error",
+			arg: anyToAny{
+				A: []string{},
 			},
 			want: want{true, 0},
 		},
