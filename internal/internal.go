@@ -18,54 +18,93 @@ const (
 	VX_TAG_KEY = "vx"
 )
 
-var typeToKind = map[string]reflect.Kind{
-	"bool":           reflect.Bool,
-	"int":            reflect.Int,
-	"int8":           reflect.Int8,
-	"int16":          reflect.Int16,
-	"int32":          reflect.Int32,
-	"int64":          reflect.Int64,
-	"uint":           reflect.Uint,
-	"uint8":          reflect.Uint8,
-	"uint16":         reflect.Uint16,
-	"uint32":         reflect.Uint32,
-	"uint64":         reflect.Uint64,
-	"uintptr":        reflect.Uintptr,
-	"float32":        reflect.Float32,
-	"float64":        reflect.Float64,
-	"complex64":      reflect.Complex64,
-	"complex128":     reflect.Complex128,
-	"array":          reflect.Array,
-	"chan":           reflect.Chan,
-	"func":           reflect.Func,
-	"interface":      reflect.Interface,
-	"map":            reflect.Map,
-	"ptr":            reflect.Ptr,
-	"slice":          reflect.Slice,
-	"string":         reflect.String,
-	"struct":         reflect.Struct,
-	"unsafe.Pointer": reflect.UnsafePointer,
-}
+func makeType(s string) (reflect.Type, error) {
+	var typ reflect.Type
 
-func stringToKind(s string) reflect.Kind {
-	kind, ok := typeToKind[s]
+	if s == "bool" {
+		typ = reflect.TypeOf(bool(true))
+	} else if s == "int" {
+		typ = reflect.TypeOf(int(0))
+	} else if s == "float64" {
+		typ = reflect.TypeOf(float64(0))
+	} else if s == "string" {
+		typ = reflect.TypeOf(string(""))
+	} else if strings.HasPrefix(s, "map") {
+		// Something like map[any]any
+		leftIdx := strings.Index(s, "[")
+		rightIdx := strings.Index(s, "]")
 
-	if !ok {
-		kind = reflect.Invalid
+		if leftIdx == -1 || rightIdx == -1 {
+			return typ, fmt.Errorf("invalid type in tag '%s'", s)
+		}
+
+		keyStr := s[leftIdx+1 : rightIdx]
+
+		keyType, err := makeType(keyStr)
+		if err != nil {
+			return typ, fmt.Errorf("couldn't make a Type for the key '%s' of the map '%s'", keyStr, s)
+		}
+
+		elemStr := s[rightIdx+1:]
+
+		elemType, err := makeType(elemStr)
+		if err != nil {
+			return typ, fmt.Errorf("couldn't make a Type for the elem '%s' of the map '%s'", elemStr, s)
+		}
+
+		typ = reflect.MapOf(keyType, elemType)
+	} else if strings.HasPrefix(s, "[]") {
+		// Something like []any
+		sliceTypeStr := s[2:]
+
+		sliceType, err := makeType(sliceTypeStr)
+		if err != nil {
+			return typ, fmt.Errorf("couldn't make a Type for the elem '%s' of the slice '%s'", sliceTypeStr, s)
+		}
+
+		typ = reflect.SliceOf(sliceType)
+	} else if !strings.HasPrefix(s, "[]") && strings.HasPrefix(s, "[") {
+		// Something like [10]any
+		leftIdx := strings.Index(s, "[")
+		rightIdx := strings.Index(s, "]")
+
+		if leftIdx == -1 || rightIdx == -1 {
+			return typ, fmt.Errorf("invalid type in tag '%s'", s)
+		}
+
+		lenStr := s[leftIdx+1 : rightIdx]
+
+		arrayLen, err := strconv.Atoi(lenStr)
+		if err != nil {
+			return typ, fmt.Errorf("got invalid length of the array '%s'", lenStr)
+		}
+
+		elemStr := s[rightIdx+1:]
+
+		elemType, err := makeType(elemStr)
+		if err != nil {
+			return typ, fmt.Errorf("couldn't make a Type for the elem '%s' of the array '%s'", elemStr, s)
+		}
+
+		typ = reflect.ArrayOf(arrayLen, elemType)
+	} else {
+		return typ, fmt.Errorf("cannot make a Type for '%s'", s)
 	}
 
-	return kind
+	return typ, nil
 }
 
 type VxTag struct {
-	Kind  reflect.Kind
-	Rules []rule
+	Type            reflect.Type
+	HasExplicitType bool
+	Rules           []rule
 }
 
 func MakeTag(field VxField) (VxTag, error) {
 	tag := VxTag{
-		Kind:  reflect.Invalid,
-		Rules: []rule{},
+		Type:            reflect.TypeOf(nil),
+		HasExplicitType: false,
+		Rules:           []rule{},
 	}
 
 	splits := strings.Split(field.Tag, ",")
@@ -76,34 +115,24 @@ func MakeTag(field VxField) (VxTag, error) {
 	for _, split := range splits {
 		if strings.Contains(split, "type") {
 			typeStr := strings.Split(split, "=")[1]
-			tagKind := stringToKind(typeStr)
 
-			if tagKind == reflect.Invalid {
-				err := fmt.Errorf("%s has an invalid/unsupported type '%s' in tag", field.Name, typeStr)
+			tagType, err := makeType(typeStr)
+			if err != nil {
 				return tag, err
 			}
 
-			tag.Kind = tagKind
+			tag.Type = tagType
+			tag.HasExplicitType = true
 		}
-
 	}
 
-	// No explicit `type` was provided in the tag.
-	if tag.Kind == reflect.Invalid {
-		tag.Kind = field.Type.Kind()
+	if !tag.HasExplicitType {
+		tag.Type = field.Type
 	}
 
-	if tag.Kind != field.Type.Kind() && field.Type.Kind() != reflect.Interface {
-		err := fmt.Errorf("type mismatch: %s type in struct is '%s' and in tag is '%s'", field.Name, field.Type, tag.Kind)
+	if tag.Type != field.Type && field.Type.Kind() != reflect.Interface {
+		err := fmt.Errorf("type mismatch: %s type in struct is '%s' and in tag is '%s'", field.Name, field.Type, tag.Type)
 		return tag, err
-	}
-
-	// NOTE: `field.ValueType.Kind()` panics when `field.Value` is `nil` !!!
-	if field.Value != nil {
-		if tag.Kind != field.ValueType.Kind() && field.Type.Kind() != reflect.Interface {
-			err := fmt.Errorf("%s should be of type %s but got %s", field.Name, tag.Kind, field.ValueType.Kind())
-			return tag, err
-		}
 	}
 
 	// Looping second time to build rules.
