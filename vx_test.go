@@ -54,13 +54,13 @@ func TestTypeInTag(t *testing.T) {
 		A any `vx:"type=[]string"`
 	}
 
+	type anyToArray struct {
+		A any `vx:"type=[10]string"`
+	}
+
 	type anyToMap struct {
 		A any `vx:"type=map[string]string"`
 	}
-
-	// type anyToArray struct {
-	// 	A [10]string
-	// }
 
 	tests := []validateStructTest{
 		{
@@ -95,6 +95,13 @@ func TestTypeInTag(t *testing.T) {
 			name: "anyToSlice with []string value should not give an error",
 			arg: anyToSlice{
 				A: []string{},
+			},
+			want: want{true, 0},
+		},
+		{
+			name: "anyToArray with [10]string{} value should not give an error",
+			arg: anyToArray{
+				A: [10]string{},
 			},
 			want: want{true, 0},
 		},
