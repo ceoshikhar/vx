@@ -69,8 +69,14 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 	}
 
 	for _, field := range parsedStruct.Fields {
-		if field.Type != field.ValueType && field.Type.Kind() != reflect.Interface {
-			res.Errors = append(res.Errors, fmt.Errorf("%s should be of type %s", field.Name, field.Type))
+		// NOTE: `field.ValueType.Kind()` panics when `field.Value` is `nil` !!!
+		if field.Value != nil {
+			tag := tagMap[field.Name]
+			if tag.Type != field.ValueType && field.Type.Kind() == reflect.Interface && tag.HasExplicitType {
+				err := fmt.Errorf("%s should be of type %s but got %s", field.Name, tag.Type, field.ValueType.Kind())
+				res.Errors = append(res.Errors, err)
+				return res, ok
+			}
 		}
 
 		// This is a bit tricky. Although we have a "required" Rule to check and warn
@@ -106,8 +112,8 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 		}
 	}
 
-	fmt.Println("\nParsedStruct:", parsedStruct)
-	fmt.Println("\nResult:", ok, res)
+	// fmt.Println("\nParsedStruct:", parsedStruct)
+	// fmt.Println("\nResult:", ok, res)
 
 	return res, ok
 }
