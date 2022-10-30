@@ -33,6 +33,90 @@ func runValidateStructTests(tests []validateStructTest, t *testing.T) {
 	}
 }
 
+func TestTypeInTag(t *testing.T) {
+	type anyToBool struct {
+		A any `vx:"type=bool"`
+	}
+
+	type anyToInt struct {
+		A any `vx:"type=int"`
+	}
+
+	type anyToFloat64 struct {
+		A any `vx:"type=float64"`
+	}
+
+	type anyToString struct {
+		A any `vx:"type=string"`
+	}
+
+	type anyToSlice struct {
+		A any `vx:"type=[]string"`
+	}
+
+	type anyToMap struct {
+		A any `vx:"type=map[string]string"`
+	}
+
+	// type anyToArray struct {
+	// 	A [10]string
+	// }
+
+	tests := []validateStructTest{
+		{
+			name: "anyToBool with bool value should not give an error",
+			arg: anyToBool{
+				A: false,
+			},
+			want: want{true, 0},
+		},
+		{
+			name: "anyToInt with int value should not give an error",
+			arg: anyToInt{
+				A: 0,
+			},
+			want: want{true, 0},
+		},
+		{
+			name: "anyToFloat64 with float value should not give an error",
+			arg: anyToFloat64{
+				A: 0.0,
+			},
+			want: want{true, 0},
+		},
+		{
+			name: "anyToString with string value should not give an error",
+			arg: anyToString{
+				A: "",
+			},
+			want: want{true, 0},
+		},
+		{
+			name: "anyToSlice with []string value should not give an error",
+			arg: anyToSlice{
+				A: []string{},
+			},
+			want: want{true, 0},
+		},
+		{
+			name: "anyToMap with map[string]string{} value should not give an error",
+			arg: anyToMap{
+				A: map[string]string{},
+			},
+			want: want{true, 0},
+		},
+		{
+			name: "anyToBool with string value should give an error",
+			arg: anyToBool{
+				A: "",
+			},
+			want: want{true, 1},
+		},
+	}
+
+	runValidateStructTests(tests, t)
+}
+
 func TestRequired(t *testing.T) {
 	type aAny struct {
 		A any `vx:"required"`
@@ -56,7 +140,7 @@ func TestRequired(t *testing.T) {
 		{
 			name: "aAny with float64 value should not give an error",
 			arg: aAny{
-				A: 0,
+				A: 0.0,
 			},
 			want: want{true, 0},
 		},
