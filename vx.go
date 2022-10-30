@@ -74,7 +74,7 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 			tag := tagMap[field.Name]
 
 			if tag.Type != field.ValueType && field.Type.Kind() == reflect.Interface && tag.HasExplicitType && tag.Type.Kind() != reflect.Interface {
-				err := fmt.Errorf("%s should be of type %s but got %s", field.Name, tag.Type, field.ValueType.Kind())
+				err := fmt.Errorf("%s should be of type %s but got %s", field.Name, tag.Type, field.ValueType)
 				res.Errors = append(res.Errors, err)
 				return res, ok
 			}
