@@ -79,9 +79,44 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 			// the type for `key` and `elem` and compare them to `tag.Type`.
 
 			if tag.Type != field.ValueType && field.Type.Kind() == reflect.Interface && tag.HasExplicitType && tag.Type.Kind() != reflect.Interface {
-				err := fmt.Errorf("%s should be of type %s but got %s", field.Name, tag.Type, field.ValueType)
-				res.Errors = append(res.Errors, err)
-				return res, ok
+
+				switch tag.Type.Kind() {
+				case reflect.Slice:
+					{
+						if tag.Type.Elem().Kind() != field.ValueType.Elem().Kind() && tag.Type.Elem().Kind() != reflect.Interface && field.ValueType.Elem().Kind() != reflect.Interface {
+							err = fmt.Errorf("%s should be an array of elem of type %s but got %s", field.Name, tag.Type.Elem(), field.ValueType.Elem())
+							res.Errors = append(res.Errors, err)
+						}
+					}
+				case reflect.Array:
+					{
+						if tag.Type.Elem().Kind() != field.ValueType.Elem().Kind() && tag.Type.Elem().Kind() != reflect.Interface && field.ValueType.Elem().Kind() != reflect.Interface {
+							err = fmt.Errorf("%s should be an array of elem of type %s but got %s", field.Name, tag.Type.Elem(), field.ValueType.Elem())
+							res.Errors = append(res.Errors, err)
+						}
+
+						if tag.Type.Len() != field.ValueType.Len() {
+							err = fmt.Errorf("%s should be an array of length %d but got %d", field.Name, tag.Type.Len(), field.ValueType.Len())
+							res.Errors = append(res.Errors, err)
+						}
+					}
+				case reflect.Map:
+					{
+						if tag.Type.Key().Kind() != field.ValueType.Key().Kind() && tag.Type.Key().Kind() != reflect.Interface && field.ValueType.Key().Kind() != reflect.Interface {
+							err = fmt.Errorf("%s should be a map with key of type %s and elem of type %s but got map with key of type %s", field.Name, tag.Type.Key(), tag.Type.Elem(), field.ValueType.Key())
+							res.Errors = append(res.Errors, err)
+						}
+
+						if tag.Type.Elem().Kind() != field.ValueType.Elem().Kind() && tag.Type.Elem().Kind() != reflect.Interface && field.ValueType.Elem().Kind() != reflect.Interface {
+							err = fmt.Errorf("%s should be a map with key of type %s and elem of type %s but got map with elem of type %s", field.Name, tag.Type.Key(), tag.Type.Elem(), field.ValueType.Elem())
+							res.Errors = append(res.Errors, err)
+						}
+					}
+				default:
+					err = fmt.Errorf("%s should be of type %s but got %s", field.Name, tag.Type, field.ValueType)
+					res.Errors = append(res.Errors, err)
+				}
+
 			}
 		}
 
@@ -103,7 +138,6 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 	// errors are due to the fact that some field(s) type casting failed.
 	// We don't execute Rules and return here with type casting errors.
 	if len(res.Errors) > 0 {
-		ok = true
 		return res, ok
 	}
 

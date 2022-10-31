@@ -66,6 +66,18 @@ func TestTypeInTag(t *testing.T) {
 		A any `vx:"type=any"`
 	}
 
+	type anyToStringSlice struct {
+		A any `vx:"type=[]string"`
+	}
+
+	type anyToStringToStringMap struct {
+		A any `vx:"type=map[string]string"`
+	}
+
+	type anyToStringArray struct {
+		A any `vx:"type=[10]string"`
+	}
+
 	tests := []validateStructTest{
 		{
 			name: "anyToBool with bool value should not give an error",
@@ -124,11 +136,67 @@ func TestTypeInTag(t *testing.T) {
 			want: want{true, 0},
 		},
 		{
+			name: "anyToStringSlice with []string{} value should not give an error",
+			arg: anyToAny{
+				A: []string{},
+			},
+			want: want{true, 0},
+		},
+		{
+			name: "anyToStringSlice with []string value should not give an error",
+			arg: anyToStringSlice{
+				A: []string{},
+			},
+			want: want{true, 0},
+		},
+		{
+			name: "anyToStringToStringMap with map[string]string value should not give an error",
+			arg: anyToStringToStringMap{
+				A: map[string]string{},
+			},
+			want: want{true, 0},
+		},
+		{
 			name: "anyToBool with string value should give an error",
 			arg: anyToBool{
 				A: "",
 			},
 			want: want{true, 1},
+		},
+		{
+			name: "anyToStringSlice with []any value should not give an error",
+			arg: anyToStringSlice{
+				A: []any{},
+			},
+			want: want{true, 0},
+		},
+		{
+			name: "anyToStringArray with [10]string value should not give an error",
+			arg: anyToStringArray{
+				A: [10]any{},
+			},
+			want: want{true, 0},
+		},
+		{
+			name: "anyToStringToStringMap with map[any]any value should not give an error",
+			arg: anyToStringToStringMap{
+				A: map[any]any{},
+			},
+			want: want{true, 0},
+		},
+		{
+			name: "anyToStringToStringMap with map[string]any value should not give an error",
+			arg: anyToStringToStringMap{
+				A: map[string]any{},
+			},
+			want: want{true, 0},
+		},
+		{
+			name: "anyToStringToStringMap with map[any]string value should not give an error",
+			arg: anyToStringToStringMap{
+				A: map[any]string{},
+			},
+			want: want{true, 0},
 		},
 	}
 
