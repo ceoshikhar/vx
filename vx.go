@@ -199,13 +199,6 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 
 	}
 
-	// If we have collected some errors and have reached here that means these
-	// errors are due to the fact that some field(s) type casting failed.
-	// We don't execute Rules and return here with type casting errors.
-	if len(res.Errors) > 0 {
-		return res, ok
-	}
-
 	for fieldName, tag := range tagMap {
 		field := fieldMap[fieldName]
 
