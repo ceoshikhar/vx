@@ -309,6 +309,10 @@ func makeMinLength(l int) minLength {
 }
 
 func (r minLength) Exec(field VxField) error {
+	if field.Value == nil {
+		return nil
+	}
+
 	wrongTypeErr := fmt.Errorf("%s - minLength: rule can only be applied to type string but was applied to type %s", field.Name, field.ValueType)
 
 	if field.Type.Kind() != reflect.String && field.Type.Kind() != reflect.Interface {
