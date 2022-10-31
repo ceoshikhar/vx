@@ -73,22 +73,16 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 		if field.Value != nil {
 			tag := tagMap[field.Name]
 
-			// FIXME: Maybe we should have early checks to decide to "continue",
-			// if we happen to reach the end, we return the error for wrong type.
-			// Because for slices, array and map, we need to figure out and
-			// the type for `key` and `elem` and compare them to `tag.Type`.
-
 			if tag.Type != field.ValueType && field.Type.Kind() == reflect.Interface && tag.HasExplicitType && tag.Type.Kind() != reflect.Interface {
-
 				switch tag.Type.Kind() {
 				case reflect.Slice:
 					var actualElemType reflect.Type = nil
-					sliceHasElems := false
+					hasElems := false
 
 					mySlice, ok := field.Value.([]any)
 					if ok {
 						for _, elem := range mySlice {
-							sliceHasElems = true
+							hasElems = true
 
 							if actualElemType == nil || reflect.TypeOf(elem) != tag.Type.Elem() {
 								actualElemType = reflect.TypeOf(elem)
@@ -98,10 +92,10 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 
 					{
 						if tag.Type.Elem().Kind() != field.ValueType.Elem().Kind() {
-							if tag.Type.Elem().Kind() != reflect.Interface && field.ValueType.Elem().Kind() != reflect.Interface || (sliceHasElems && tag.Type.Elem() != actualElemType) {
+							if tag.Type.Elem().Kind() != reflect.Interface && field.ValueType.Elem().Kind() != reflect.Interface || (hasElems && tag.Type.Elem() != actualElemType) {
 								elemType := field.ValueType.Elem()
 
-								if sliceHasElems {
+								if hasElems {
 									elemType = actualElemType
 								}
 
@@ -112,9 +106,31 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 					}
 				case reflect.Array:
 					{
-						if tag.Type.Elem().Kind() != field.ValueType.Elem().Kind() && tag.Type.Elem().Kind() != reflect.Interface && field.ValueType.Elem().Kind() != reflect.Interface {
-							err = fmt.Errorf("%s should be an array of elem of type %s but got %s", field.Name, tag.Type.Elem(), field.ValueType.Elem())
-							res.Errors = append(res.Errors, err)
+						var actualElemType reflect.Type = nil
+						hasElems := false
+
+						mySlice, ok := field.Value.([]any)
+						if ok {
+							for _, elem := range mySlice {
+								hasElems = true
+
+								if actualElemType == nil || reflect.TypeOf(elem) != tag.Type.Elem() {
+									actualElemType = reflect.TypeOf(elem)
+								}
+							}
+						}
+
+						if tag.Type.Elem().Kind() != field.ValueType.Elem().Kind() {
+							if tag.Type.Elem().Kind() != reflect.Interface && field.ValueType.Elem().Kind() != reflect.Interface || (hasElems && tag.Type.Elem() != actualElemType) {
+								elemType := field.ValueType.Elem()
+
+								if hasElems {
+									elemType = actualElemType
+								}
+
+								err = fmt.Errorf("%s should be an array of elem of type %s but got %s", field.Name, tag.Type.Elem(), elemType)
+								res.Errors = append(res.Errors, err)
+							}
 						}
 
 						if tag.Type.Len() != field.ValueType.Len() {
@@ -125,12 +141,12 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 				case reflect.Map:
 					{
 						var actualKeyType, actualElemType reflect.Type = nil, nil
-						mapHasElems := false
+						hasElems := false
 
 						myMap, ok := field.Value.(map[string]any)
 						if ok {
 							for key, elem := range myMap {
-								mapHasElems = true
+								hasElems = true
 
 								// If `key` if of type `any` in `Field.Value` then `ValueType.Key()`
 								// can be of more than 1 type. We want `actualKeyType` to change
@@ -152,10 +168,10 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 						}
 
 						if tag.Type.Key().Kind() != field.ValueType.Key().Kind() {
-							if tag.Type.Key().Kind() != reflect.Interface && field.ValueType.Key().Kind() != reflect.Interface || (mapHasElems && tag.Type.Key() != actualKeyType) {
+							if tag.Type.Key().Kind() != reflect.Interface && field.ValueType.Key().Kind() != reflect.Interface || (hasElems && tag.Type.Key() != actualKeyType) {
 								keyType := field.ValueType.Key()
 
-								if mapHasElems {
+								if hasElems {
 									keyType = actualKeyType
 								}
 
@@ -165,10 +181,10 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 						}
 
 						if tag.Type.Elem().Kind() != field.ValueType.Elem().Kind() {
-							if tag.Type.Elem().Kind() != reflect.Interface && field.ValueType.Elem().Kind() != reflect.Interface || (mapHasElems && tag.Type.Elem() != actualElemType) {
+							if tag.Type.Elem().Kind() != reflect.Interface && field.ValueType.Elem().Kind() != reflect.Interface || (hasElems && tag.Type.Elem() != actualElemType) {
 								elemType := field.ValueType.Elem()
 
-								if mapHasElems {
+								if hasElems {
 									elemType = actualElemType
 								}
 
