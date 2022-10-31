@@ -22,6 +22,16 @@ func (v VxResult) String() string {
 	return sb.String()
 }
 
+func (v VxResult) StringArray() []string {
+	var errArray []string = []string{}
+
+	for _, err := range v.Errors {
+		errArray = append(errArray, err.Error())
+	}
+
+	return errArray
+}
+
 // Parses and validates all the field's values of the given struct `v` against
 // the rules mentioned in the "vx" tag.
 //
