@@ -2,6 +2,7 @@ package vx
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"strings"
 	"vx/internal"
@@ -215,9 +216,8 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 		// field.Value to be a default of the type that was being expected. If the
 		// expected type is any, we will default it to empty string.
 		if field.Value == nil {
-			fmt.Printf("YIKES! This is bad, %s is nil which can be a nasty runtime error.", field.Name)
+			log.Printf("YIKES! This is bad, %s is nil which can be a nasty runtime error.", field.Name)
 		}
-
 	}
 
 	for fieldName, tag := range tagMap {

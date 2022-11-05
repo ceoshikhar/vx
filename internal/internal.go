@@ -13,12 +13,22 @@ const (
 	// Tag key on struct fields for VX specific data.
 	//
 	// Ex:
-	// type myStruct struct {
-	//	   name: string `vx:"some value in the tag."`
+	// type user struct {
+	//	   Name any `vx:"name=name, type=string, required"`
+	//	   Password any `vx:"name=password, type=string, required, minLength=3"`
 	// }
 	VX_TAG_KEY = "vx"
 )
 
+// Makes a reflect.Type from a string of type.
+// Example:
+// t1 := makeType("string")
+// fmt.Println(t1.Kind()) -> reflect.String
+//
+// t2 := makeType("map[string]int")
+// fmt.Println(t2.Kind()) -> reflect.Map
+// fmt.Println(t2.Key().Kind()) -> reflect.String
+// fmt.Println(t2.Elem().Kind()) -> reflect.Int
 func makeType(s string) (reflect.Type, error) {
 	var typ reflect.Type
 
@@ -46,7 +56,7 @@ func makeType(s string) (reflect.Type, error) {
 	} else if s == "string" {
 		typ = reflect.TypeOf(string(""))
 	} else if strings.HasPrefix(s, "map") {
-		// Something like map[any]any
+		// Something like `map[any]any`.
 		leftIdx := strings.Index(s, "[")
 		rightIdx := strings.Index(s, "]")
 
@@ -70,7 +80,7 @@ func makeType(s string) (reflect.Type, error) {
 
 		typ = reflect.MapOf(keyType, elemType)
 	} else if strings.HasPrefix(s, "[]") {
-		// Something like []any
+		// Something like `[]any`.
 		sliceTypeStr := s[2:]
 
 		sliceType, err := makeType(sliceTypeStr)
@@ -80,7 +90,7 @@ func makeType(s string) (reflect.Type, error) {
 
 		typ = reflect.SliceOf(sliceType)
 	} else if !strings.HasPrefix(s, "[]") && strings.HasPrefix(s, "[") {
-		// Something like [10]any
+		// Something like `[10]any`.
 		leftIdx := strings.Index(s, "[")
 		rightIdx := strings.Index(s, "]")
 
@@ -123,11 +133,11 @@ func MakeTag(field VxField) (VxTag, error) {
 		Rules:           []rule{},
 	}
 
-	splits := strings.Split(field.Tag, ",")
+	splits := strings.Split(field.TagString, ",")
 
 	// Looping first time to just get the "type".
 	// PERFORMANCE: technicallly the time complexity remains O(n) even if we
-	// loop twice over `splits` but maybe consider not looping twice?
+	// loop twice over `splits` but maybe somehow not loop twice and get it done?
 	for _, split := range splits {
 		if strings.Contains(split, "type=") {
 			typeStr := strings.Split(split, "=")[1]
@@ -174,7 +184,7 @@ func MakeTag(field VxField) (VxTag, error) {
 			rule := makeRequired()
 			tag.Rules = append(tag.Rules, rule)
 		} else {
-			log.Println("got an invalid value in the tag: ", split)
+			log.Printf("[Vx]: got an invalid value `%s` in the tag", split)
 		}
 	}
 
@@ -187,7 +197,7 @@ type VxField struct {
 	// Type of the field.
 	Type reflect.Type
 	// The `"vx"` tag on the field.
-	Tag string
+	TagString string
 	// Value of this field.
 	Value any
 	// Type of the value given to this field.
@@ -229,9 +239,9 @@ func ParseStruct(toParse interface{}) (VxStruct, error) {
 
 		Name := field.Name
 		Type := field.Type
-		Tag := field.Tag.Get(VX_TAG_KEY)
+		TagString := field.Tag.Get(VX_TAG_KEY)
 
-		splits := strings.Split(Tag, ",")
+		splits := strings.Split(TagString, ",")
 		for _, split := range splits {
 			if strings.Contains(split, "name=") {
 				v := strings.Split(split, "=")[1]
@@ -264,7 +274,7 @@ func ParseStruct(toParse interface{}) (VxStruct, error) {
 			}
 		}
 
-		fields = append(fields, VxField{Name, Type, Tag, Value, ValueType})
+		fields = append(fields, VxField{Name, Type, TagString, Value, ValueType})
 	}
 
 	return VxStruct{
