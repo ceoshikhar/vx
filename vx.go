@@ -78,11 +78,13 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 		return res, ok
 	}
 
+	// Validate the type of the value. Return an error if the type is wrong.
 	for _, field := range parsedStruct.Fields {
-		// NOTE: `field.ValueType.Kind()` panics when `field.Value` is `nil` !!!
+		// `field.ValueType.Kind()` panics when `field.Value` is `nil` !!!
 		if field.Value != nil {
 			tag := tagMap[field.Name]
 
+			// Check if the type of the value is valid.
 			if tag.Type != field.ValueType && field.Type.Kind() == reflect.Interface && tag.HasExplicitType && tag.Type.Kind() != reflect.Interface {
 				switch tag.Type.Kind() {
 				case reflect.Slice:
@@ -100,114 +102,107 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 						}
 					}
 
-					{
-						if tag.Type.Elem().Kind() != field.ValueType.Elem().Kind() {
-							if tag.Type.Elem().Kind() != reflect.Interface && field.ValueType.Elem().Kind() != reflect.Interface || (hasElems && tag.Type.Elem() != actualElemType) {
-								elemType := field.ValueType.Elem()
+					if tag.Type.Elem().Kind() != field.ValueType.Elem().Kind() {
+						if tag.Type.Elem().Kind() != reflect.Interface && field.ValueType.Elem().Kind() != reflect.Interface || (hasElems && tag.Type.Elem() != actualElemType) {
+							elemType := field.ValueType.Elem()
 
-								if hasElems {
-									elemType = actualElemType
-								}
-
-								err = fmt.Errorf("%s should be an array of elem of type %s but got %s", field.Name, tag.Type.Elem(), elemType)
-								res.Errors = append(res.Errors, err)
+							if hasElems {
+								elemType = actualElemType
 							}
-						}
-					}
-				case reflect.Array:
-					{
-						var actualElemType reflect.Type = nil
-						hasElems := false
 
-						mySlice, ok := field.Value.([]any)
-						if ok {
-							for _, elem := range mySlice {
-								hasElems = true
-
-								if actualElemType == nil || reflect.TypeOf(elem) != tag.Type.Elem() {
-									actualElemType = reflect.TypeOf(elem)
-								}
-							}
-						}
-
-						if tag.Type.Elem().Kind() != field.ValueType.Elem().Kind() {
-							if tag.Type.Elem().Kind() != reflect.Interface && field.ValueType.Elem().Kind() != reflect.Interface || (hasElems && tag.Type.Elem() != actualElemType) {
-								elemType := field.ValueType.Elem()
-
-								if hasElems {
-									elemType = actualElemType
-								}
-
-								err = fmt.Errorf("%s should be an array of elem of type %s but got %s", field.Name, tag.Type.Elem(), elemType)
-								res.Errors = append(res.Errors, err)
-							}
-						}
-
-						if tag.Type.Len() != field.ValueType.Len() {
-							err = fmt.Errorf("%s should be an array of length %d but got %d", field.Name, tag.Type.Len(), field.ValueType.Len())
+							err = fmt.Errorf("%s should be an array of elem of type %s but got %s", field.Name, tag.Type.Elem(), elemType)
 							res.Errors = append(res.Errors, err)
 						}
 					}
+				case reflect.Array:
+					var actualElemType reflect.Type = nil
+					hasElems := false
+
+					mySlice, ok := field.Value.([]any)
+					if ok {
+						for _, elem := range mySlice {
+							hasElems = true
+
+							if actualElemType == nil || reflect.TypeOf(elem) != tag.Type.Elem() {
+								actualElemType = reflect.TypeOf(elem)
+							}
+						}
+					}
+
+					if tag.Type.Elem().Kind() != field.ValueType.Elem().Kind() {
+						if tag.Type.Elem().Kind() != reflect.Interface && field.ValueType.Elem().Kind() != reflect.Interface || (hasElems && tag.Type.Elem() != actualElemType) {
+							elemType := field.ValueType.Elem()
+
+							if hasElems {
+								elemType = actualElemType
+							}
+
+							err = fmt.Errorf("%s should be an array of elem of type %s but got %s", field.Name, tag.Type.Elem(), elemType)
+							res.Errors = append(res.Errors, err)
+						}
+					}
+
+					if tag.Type.Len() != field.ValueType.Len() {
+						err = fmt.Errorf("%s should be an array of length %d but got %d", field.Name, tag.Type.Len(), field.ValueType.Len())
+						res.Errors = append(res.Errors, err)
+					}
 				case reflect.Map:
-					{
-						var actualKeyType, actualElemType reflect.Type = nil, nil
-						hasElems := false
+					var actualKeyType, actualElemType reflect.Type = nil, nil
+					hasElems := false
 
-						myMap, ok := field.Value.(map[string]any)
-						if ok {
-							for key, elem := range myMap {
-								hasElems = true
+					myMap, ok := field.Value.(map[string]any)
+					if ok {
+						for key, elem := range myMap {
+							hasElems = true
 
-								// If `key` if of type `any` in `Field.Value` then `ValueType.Key()`
-								// can be of more than 1 type. We want `actualKeyType` to change
-								// only when it's nil (first time) and when the reflect.TypeOf(key)
-								// doens't match to the key type from the tag.
-								//
-								// One thing to note is that the error message will show `actualKeyType`
-								// which will be the last wrong type key/elem that we found.
-								//
-								// Same goes for `actualElemType`.
-								if actualKeyType == nil || reflect.TypeOf(key) != tag.Type.Key() {
-									actualKeyType = reflect.TypeOf(key)
-								}
+							// If `key` if of type `any` in `Field.Value` then `ValueType.Key()`
+							// can be of more than 1 type. We want `actualKeyType` to change
+							// only when it's nil (first time) and when the reflect.TypeOf(key)
+							// doens't match to the key type from the tag.
+							//
+							// One thing to note is that the error message will show `actualKeyType`
+							// which will be the last wrong type key/elem that we found.
+							//
+							// Same goes for `actualElemType`.
+							if actualKeyType == nil || reflect.TypeOf(key) != tag.Type.Key() {
+								actualKeyType = reflect.TypeOf(key)
+							}
 
-								if actualElemType == nil || reflect.TypeOf(elem) != tag.Type.Elem() {
-									actualElemType = reflect.TypeOf(elem)
-								}
+							if actualElemType == nil || reflect.TypeOf(elem) != tag.Type.Elem() {
+								actualElemType = reflect.TypeOf(elem)
 							}
 						}
+					}
 
-						if tag.Type.Key().Kind() != field.ValueType.Key().Kind() {
-							if tag.Type.Key().Kind() != reflect.Interface && field.ValueType.Key().Kind() != reflect.Interface || (hasElems && tag.Type.Key() != actualKeyType) {
-								keyType := field.ValueType.Key()
+					if tag.Type.Key().Kind() != field.ValueType.Key().Kind() {
+						if tag.Type.Key().Kind() != reflect.Interface && field.ValueType.Key().Kind() != reflect.Interface || (hasElems && tag.Type.Key() != actualKeyType) {
+							keyType := field.ValueType.Key()
 
-								if hasElems {
-									keyType = actualKeyType
-								}
-
-								err = fmt.Errorf("%s should be a map with key of type %s and elem of type %s but got map with key of type %s", field.Name, tag.Type.Key(), tag.Type.Elem(), keyType)
-								res.Errors = append(res.Errors, err)
+							if hasElems {
+								keyType = actualKeyType
 							}
+
+							err = fmt.Errorf("%s should be a map with key of type %s and elem of type %s but got map with key of type %s", field.Name, tag.Type.Key(), tag.Type.Elem(), keyType)
+							res.Errors = append(res.Errors, err)
 						}
+					}
 
-						if tag.Type.Elem().Kind() != field.ValueType.Elem().Kind() {
-							if tag.Type.Elem().Kind() != reflect.Interface && field.ValueType.Elem().Kind() != reflect.Interface || (hasElems && tag.Type.Elem() != actualElemType) {
-								elemType := field.ValueType.Elem()
+					if tag.Type.Elem().Kind() != field.ValueType.Elem().Kind() {
+						if tag.Type.Elem().Kind() != reflect.Interface && field.ValueType.Elem().Kind() != reflect.Interface || (hasElems && tag.Type.Elem() != actualElemType) {
+							elemType := field.ValueType.Elem()
 
-								if hasElems {
-									elemType = actualElemType
-								}
-
-								err = fmt.Errorf("%s should be a map with key of type %s and elem of type %s but got map with elem of type %s", field.Name, tag.Type.Key(), tag.Type.Elem(), elemType)
-								res.Errors = append(res.Errors, err)
+							if hasElems {
+								elemType = actualElemType
 							}
+
+							err = fmt.Errorf("%s should be a map with key of type %s and elem of type %s but got map with elem of type %s", field.Name, tag.Type.Key(), tag.Type.Elem(), elemType)
+							res.Errors = append(res.Errors, err)
 						}
 					}
 				default:
 					err = fmt.Errorf("%s should be of type %s but got %s", field.Name, tag.Type, field.ValueType)
 					res.Errors = append(res.Errors, err)
 				}
-
 			}
 		}
 
