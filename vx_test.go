@@ -79,11 +79,18 @@ func TestTypeInTag(t *testing.T) {
 	}
 
 	type simple struct {
-		A any `vx:"name=simpleA, type=string"`
+		SimpleA any `vx:"type=string"`
+		SimpleB any `vx:"type=[]string"`
 	}
 
 	type complex struct {
-		A simple
+		ComplexA simple
+		ComplexB any `vx:"type=map[string]string"`
+	}
+
+	type trippleNestedStruct struct {
+		RootA   any `vx:"type=string, required"`
+		NestedB complex
 	}
 
 	tests := []validateStructTest{
@@ -209,16 +216,32 @@ func TestTypeInTag(t *testing.T) {
 		{
 			name: "complex with string value should not give an error",
 			arg: complex{
-				A: simple{A: "abc"},
+				ComplexA: simple{SimpleA: "abc", SimpleB: []string{}},
+				ComplexB: map[string]string{},
 			},
 			want: want{true, 0},
 		},
 		{
-			name: "complex with int value should give an error",
+			name: "complex with int value should give errors",
 			arg: complex{
-				A: simple{A: 123},
+				ComplexA: simple{SimpleA: 123, SimpleB: []float64{}},
+				ComplexB: map[string]int{},
 			},
-			want: want{true, 1},
+			want: want{true, 3},
+		},
+		{
+			name: "trippleNestedStruct with invalid value should give errors",
+			arg: trippleNestedStruct{
+				RootA: 23,
+				NestedB: complex{
+					ComplexA: simple{
+						SimpleA: 69,
+						SimpleB: []int{},
+					},
+					ComplexB: 23,
+				},
+			},
+			want: want{true, 4},
 		},
 	}
 
