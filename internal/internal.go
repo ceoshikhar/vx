@@ -184,7 +184,9 @@ func MakeTag(field VxField) (VxTag, error) {
 			rule := makeRequired()
 			tag.Rules = append(tag.Rules, rule)
 		} else {
-			log.Printf("[Vx]: got an invalid value `%s` in the tag", split)
+			if split != "" {
+				log.Printf("[Vx]: got an invalid value `%s` in the tag", split)
+			}
 		}
 	}
 
