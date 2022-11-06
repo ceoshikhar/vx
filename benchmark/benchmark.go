@@ -7,23 +7,35 @@ import (
 	"vx"
 )
 
-type user struct {
-	Name         any `vx:"name=name, type=string, required, minLength=3"`
-	Age          any `vx:"name=age, type=float64, required"`
-	Location     any `vx:"name=location, type=[]string"`
-	AssocOrBonus any `vx:"type=map[string]string"`
+type simple struct {
+	SimpleA any `vx:"name=simple_a, type=string"`
+	SimpleB any `vx:"name=simple_b, type=[]string"`
+}
+
+type complex struct {
+	ComplexA simple
+	ComplexB any `vx:"name=complex_b, type=map[string]string"`
+}
+
+type trippleNestedStruct struct {
+	RootA   any `vx:"type=string, required"`
+	NestedB complex
 }
 
 func BenchmarkValidateStruct(b *testing.B) {
-	u := user{
-		Name:         "shikhar",
-		Age:          20,
-		Location:     []string{"India"},
-		AssocOrBonus: map[string]string{"key": "value"},
+	v := trippleNestedStruct{
+		RootA: 23,
+		NestedB: complex{
+			ComplexA: simple{
+				SimpleA: 69,
+				SimpleB: []int{},
+			},
+			ComplexB: 23,
+		},
 	}
 
 	for i := 0; i < b.N; i++ {
-		vx.ValidateStruct(u)
+		vx.ValidateStruct(v)
 	}
 }
 
