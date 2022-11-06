@@ -79,7 +79,7 @@ func TestTypeInTag(t *testing.T) {
 	}
 
 	type simple struct {
-		A any `vx:"type=string"`
+		A any `vx:"name=simpleA, type=string"`
 	}
 
 	type complex struct {

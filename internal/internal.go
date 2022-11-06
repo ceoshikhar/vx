@@ -260,19 +260,15 @@ func ParseStruct(toParse interface{}) (VxStruct, error) {
 
 		// Checking if we have a Type on a Field which is another custom `type`(Go keyword).
 		if strings.Contains(Type.String(), ".") && strings.Contains(ValueType.String(), ".") {
-			fmt.Println("Field with a type that is of another type:", Type)
-
 			// Switching over the actual `type`.
 			switch Type.Kind() {
-			case reflect.Map:
-				{
-					fmt.Println(Type, Type.Key(), Type.Elem())
+			case reflect.Struct:
+				parsedStruct, err := ParseStruct(Value)
+				if err != nil {
+					return VxStruct{}, err
 				}
 
-			default:
-				{
-					// Nothing to do here.
-				}
+				fields = append(fields, parsedStruct.Fields...)
 			}
 		}
 
