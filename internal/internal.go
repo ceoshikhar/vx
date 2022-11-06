@@ -259,7 +259,7 @@ func ParseStruct(toParse interface{}) (VxStruct, error) {
 		ValueType := reflect.TypeOf(Value)
 
 		// Checking if we have a Type on a Field which is another custom `type`(Go keyword).
-		if strings.Contains(Type.String(), "main") && strings.Contains(ValueType.String(), "main") {
+		if strings.Contains(Type.String(), ".") && strings.Contains(ValueType.String(), ".") {
 			fmt.Println("Field with a type that is of another type:", Type)
 
 			// Switching over the actual `type`.
