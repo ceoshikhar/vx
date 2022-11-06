@@ -268,6 +268,14 @@ func ParseStruct(toParse interface{}) (VxStruct, error) {
 					return VxStruct{}, err
 				}
 
+				structName := strings.Split(ValueType.String(), ".")[1]
+				if structName != "" {
+					for i, field := range parsedStruct.Fields {
+						// Prefixing the Field's name with it's parent field's name.
+						parsedStruct.Fields[i].Name = Name + "." + field.Name
+					}
+				}
+
 				fields = append(fields, parsedStruct.Fields...)
 			}
 		}

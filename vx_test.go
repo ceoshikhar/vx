@@ -79,13 +79,13 @@ func TestTypeInTag(t *testing.T) {
 	}
 
 	type simple struct {
-		SimpleA any `vx:"type=string"`
-		SimpleB any `vx:"type=[]string"`
+		SimpleA any `vx:"name=simple_a, type=string"`
+		SimpleB any `vx:"name=simple_b, type=[]string"`
 	}
 
 	type complex struct {
 		ComplexA simple
-		ComplexB any `vx:"type=map[string]string"`
+		ComplexB any `vx:"name=complex_b, type=map[string]string"`
 	}
 
 	type trippleNestedStruct struct {
