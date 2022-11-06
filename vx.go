@@ -87,6 +87,15 @@ func ValidateStruct(v any) (res VxResult, ok bool) {
 
 			// Check if the type of the value is valid.
 			if tag.Type != field.ValueType && field.Type.Kind() == reflect.Interface && tag.HasExplicitType && tag.Type.Kind() != reflect.Interface {
+				if tag.Type.Kind() != field.ValueType.Kind() {
+					err = fmt.Errorf("%s should be of type %s but got %s", field.Name, tag.Type, field.ValueType)
+					res.Errors = append(res.Errors, err)
+					// We want to switch over `tag.Type.Kind()` only if it's
+					// same as `field.ValueType.kind()` because then only
+					// it makes sense to compare type of key and/or elem.
+					continue
+				}
+
 				switch tag.Type.Kind() {
 				case reflect.Slice:
 					var actualElemType reflect.Type = nil
