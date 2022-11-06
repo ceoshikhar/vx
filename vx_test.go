@@ -78,6 +78,14 @@ func TestTypeInTag(t *testing.T) {
 		A any `vx:"type=[10]string"`
 	}
 
+	type simple struct {
+		A any `vx:"type=string"`
+	}
+
+	type complex struct {
+		A simple
+	}
+
 	tests := []validateStructTest{
 		{
 			name: "anyToBool with bool value should not give an error",
@@ -197,6 +205,20 @@ func TestTypeInTag(t *testing.T) {
 				A: map[any]string{},
 			},
 			want: want{true, 0},
+		},
+		{
+			name: "complex with string value should not give an error",
+			arg: complex{
+				A: simple{A: "abc"},
+			},
+			want: want{true, 0},
+		},
+		{
+			name: "complex with int value should give an error",
+			arg: complex{
+				A: simple{A: 123},
+			},
+			want: want{true, 1},
 		},
 	}
 
